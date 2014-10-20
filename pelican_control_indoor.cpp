@@ -36,6 +36,7 @@
 #include <iostream>
 
 #include "module0.h"
+#include "functions.h"
 
 using namespace std;
 using namespace cv;
@@ -56,44 +57,11 @@ extern int height;
 extern int landing;
 //////////////////////
 
-#define CIRCLE 0
-#define PLANE 1
 
 #define LANDING 95
 
 int Nfunc1;
 int Nfunc2;
-
-
-double functionCircle(double x, double y, double z)
-{
-	double radius = 3; double center_x = 0; double center_y = 0;
-	return (pow(x-center_x,2) - pow(y-center_y,2) - pow(radius,2));
-}
-
-double functionPlane(double x, double y, double z)
-{
-	double k_x = 0; double k_y = 0; double k_z = 1;
-	return (k_x * x + k_y * y + k_z * z);
-}
-
-
-void fgradCircle(double *res, double x, double y, double z){
-	double radius = 3; double center_x = 0; double center_y = 0;
-	res[0] = 2*(x-center_x);
-	res[1] = 2*(y-center_y);
-	res[2] = 0;
-}
-
-void fgradPlane(double *res, double x, double y, double z){
-	double k_x = 0; double k_y = 0; double k_z = 1;
-	res[0] = k_x;
-	res[1] = k_y;
-	res[2] = k_z;
-}
-
-double (*array_function[2])(double, double, double) = { functionCircle, functionPlane };
-void (*array_fgrad[2])(double*, double, double, double) = { fgradCircle, fgradPlane };
 
 void normalize1(Mat mat){
 	if (norm(mat,NORM_L2) != 0){
