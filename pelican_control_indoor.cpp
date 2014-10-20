@@ -60,7 +60,7 @@ extern int landing;
 
 double Module0::function1(double x, double y, double z)
 {
-	return (y);
+	return (pow(x+5, 2) - pow(y,2) - 1);
 }
 
 double Module0::function2(double x, double y, double z)
@@ -69,8 +69,8 @@ double Module0::function2(double x, double y, double z)
 }
 //Calcolo dei gradienti
 void Module0::fgrad1(double x, double y, double z, double *res){
-	res[0] = 0;
-	res[1] = 1;
+	res[0] = 2*(x+5);
+	res[1] = 2*(y);
 	res[2] = 0;
 }
 
@@ -98,7 +98,7 @@ void normalize1(double *vett){
 	}
 	else
 	{
-		vett[0] = vett[0] / norm;
+		vett[0] = vett[0]/norm;
 		vett[1] = vett[1]/norm;
 		vett[2] = vett[2]/norm;
 	}
@@ -161,36 +161,6 @@ Module0::loadParams() {
 	//Punto target per telecamera drone.
 	x_target = 0;
 	y_target = 0;
-	/*
-	ifstream fs("pelican_params_out.txt");
-	if (fs.is_open()){
-		//file format:
-		//1st line: thrustOffset pitchOffset rollOffset yawOffset
-		//2nd line: kpx kpy kpz kpyaw
-		//3rd line: kdx kdy kdz kdyaw
-		//4th line: kix kiy kiz kiyaw
-		fs >> thrustOffset;
-		fs >> pitchOffset;
-		fs >> rollOffset;
-		fs >> yawOffset;
-		fs >> kpx;
-		fs >> kpy;
-		fs >> kpz;
-		fs >> kpyaw;
-		fs >> kdx;
-		fs >> kdy;
-		fs >> kdz;
-		fs >> kdyaw;
-		fs >> kix;
-		fs >> kiy;
-		fs >> kiz;
-		fs >> kiyaw;
-		cout << endl << "Params loaded" << endl;
-	}
-	else {
-		cerr << endl << "File not found!" << endl;
-	}
-	*/
 }
 
 //A text file to save the parameters is initialized with the variables to be saved
@@ -271,15 +241,27 @@ Module0::DoYourDuty (int wc)
            
     theta = 0.001 * (double) angle_pitch *M_PI/180.0;  // Radiants
     phi = 0.001 * (double) angle_roll *M_PI/180.0;    // Radiants
-	psi = 0.001 * (double)angle_yaw *M_PI / 180.0;  // Radiants -> Da controllare
-  
+	psi = 0.001 * (double)angle_yaw *M_PI / 180.0;  // Radiants -> ?
+
 	if (wc)  return;
 	
 	while (MsgToBeRead())  // EHTNOS MESSAGE RECEIVED
 	{
 		const ETMessage *rxMsg = GetNextMsg();
 		message_rec++;
-		if (rxMsg->ReadType() == 3)
+		if (rxMsg->ReadType() == 1)
+		{
+			loadParams();			//QUESTO VUOL DIRE FARE UN RESET DEI PARAMETRI (integrale, ecc) ATTENZIONE!
+			cout << "********************************************" << endl;
+			cout << "*         press P to take a picture        *" << endl;
+			cout << "*        press L to load a ctrl file       *" << endl;
+			cout << "* press K to change the control parameters *" << endl;
+			cout << "* press Q to stop the waypoint operation   *" << endl;
+			cout << "*          press S to stop the motors      *" << endl;
+			cout << "*             press A to land              *" << endl;
+			cout << "********************************************" << endl;
+		}
+		else if (rxMsg->ReadType() == 3)
 		{
 			xr = *((double*)rxMsg->ReadData());
 			yr = *((double*)((char*)(rxMsg->ReadData()) + sizeof(double)));
@@ -321,29 +303,16 @@ Module0::DoYourDuty (int wc)
 			dzr = dzr1;
 			
 		}
-		if (rxMsg->ReadType() == 5){
+		//ATTENZIONE, non è in ascolto su questo messaggio!?
+		/*else if (rxMsg->ReadType() == 5){		
 			int rec = *rxMsg->ReadData();
 			if (rec == LANDING)
 			{
 				landing = 1;
 			}
-		}
+		}*/
 	}
 	RemoveCurrentMsg();
-	/*
-    lat_cart=(((double)latitude*60.0*1852.0/10000000.0)- lat_off); // actual positions are related to the starting position
-    long_cart=((((double)longitude*60.0*1852.0/10000000.0)*(cos(((double)latitude*M_PI)/(10000000.0*180.0))))- long_off);
-    height_cart =- (((double)fus_height/1000.0) - height_off);
-        
-    ETMessage *txMessage = new ETMessage(3*sizeof(double), ETHNOS_POSITION);
-    // COORDINATES IN NED FRAME
-        
-    *((double*)txMessage->GetData())=lat_cart;
-    *((double*)((char*)(txMessage->GetData())+sizeof(double)))=long_cart;
-    *((double*)((char*)(txMessage->GetData())+2*sizeof(double)))=height_cart;
-        
-    ShareMsg(txMessage);
-	*/
 
 	// time calculation
 	gettimeofday(&endtime2, NULL);
@@ -352,6 +321,7 @@ Module0::DoYourDuty (int wc)
 	mtime = ((secc)+(msec / 1000000.0)); //time in sec
 	accum_time = accum_time + mtime;
 	gettimeofday(&starttime2, NULL);
+
 	/*
 	static double *R = new double[9];
 	
@@ -398,6 +368,8 @@ Module0::DoYourDuty (int wc)
 	dyr = dyr1;
 	dzr = dzr1;
 	*/
+
+
 	//******PROVA!
 	initialize = 1;
    
@@ -440,9 +412,9 @@ Module0::DoYourDuty (int wc)
 		//guadagno sull'errore
 		e1 = ke1*e1;
 		e2 = ke2*e2;
-		//ATTENZIONE!! normalizzazione con modulo 0;
-		//Prodotto vettore
+		//ATTENZIONE!! normalizzazione con modulo 0; Fatto.
 		
+		//Prodotto vettore
 		double Tang[]
 		{
 			grad1[0] * grad2[1] - grad2[0] * grad1[1],
@@ -450,48 +422,24 @@ Module0::DoYourDuty (int wc)
 			grad1[0] * grad2[2] - grad1[2] * grad2[0]
 		};
 
-		/*
-		cv::Mat Tang = Grad1.cross(Grad2);
-		normalize1(Tang);
-		//*/
-
-
-
-
 		//normalizzazione gradienti
 		normalize1(grad1);
 		normalize1(grad2);
-		//Grad1 = Grad1 / Grad1.norm();
-		//Grad2 = Grad2 / Grad2.norm();
+
 		//vettore risultante
 		double SumNED[] = {
 			e1*grad1[0] + e2*grad2[0] + ktg*Tang[0],
 			e1*grad1[1] + e2*grad2[1] + ktg*Tang[1],
 			e1*grad1[2] + e2*grad2[2] + ktg*Tang[2],
 		};
-//		cv::Mat SumNED = Grad1*e1 + Grad2 *e2 + ktg*Tang;
+
 		normalize1(SumNED);
 
 		SumNED[0] *= veld;
 		SumNED[1] *= veld;
 		SumNED[2] *= veld;
-		//SumNED = veld* Sum / Sum.norm();
-		//Controllo che non vada sotto terra!
-		/*
-		if (zr > ground){
-			SumNED = SumNED * 0;
-		}
-		*/
 
-		//vettore velocità nello spazio del drone
-		/*cv::Mat Sum = RotMat * SumNED;
-		
-		dxd = Sum.at<double>(0, 0);
-		dyd = Sum.at<double>(1, 0);
-		dzd = Sum.at<double>(2, 0);
-		//*/
-
-		dxd = R[0] * SumNED[0] + R[1] * SumNED[1] + R[3] * SumNED[2];
+		dxd = R[0] * SumNED[0] + R[1] * SumNED[1] + R[2] * SumNED[2];
 		dyd = R[3] * SumNED[0] + R[4] * SumNED[1] + R[5] * SumNED[2];
 		dzd = R[6] * SumNED[0] + R[7] * SumNED[1] + R[8] * SumNED[2];
 
@@ -506,7 +454,6 @@ Module0::DoYourDuty (int wc)
 		double edy = dyd - dyr;
 		double edz = dzd - dzr;
 
-		//printf("\nedx, edy: %f %f", edx, edy);
 		cumulx = cumulx + edx*mtime;
 		cumuly = cumuly + edy*mtime;
 		cumulz = cumulz + edz*mtime;
@@ -520,11 +467,9 @@ Module0::DoYourDuty (int wc)
 		edyback = edy;
 		edzback = edz;
 
-		//ATTERRAGGIO?
-
         up = pitchOffset + kpvx*(edx) + kivx*(cumulx) + kdvx*(dedx); // pitch command
 		ur = rollOffset + kpvy*(edy) + kivy*(cumuly)+ kdvy*(dedy); // roll command
-
+		//ATTERRAGGIO?
 		if (landing == 1)
 		{
 			ut = ut - 0.5;
@@ -612,13 +557,15 @@ Module0::DoYourDuty (int wc)
         //printf ("gps_cartesian: long %f lat %f height %f \n", long_cart, lat_cart, height_cart);
         //printf ("  fus long %d lat %d height %d \n", fus_longitude, fus_latitude, fus_height);
         //printf ("GPS STATUS:  gps: heading: %d, yaw: %f, accuracy: %d, height accuracy: %d, sat: %d, status: %d  \n", GPS_heading, psi, position_accuracy, height_accuracy, GPS_num, GPS_status);       
-		printf("\n\nROBOT POSITION: x, y, z, yaw: %f %f %f %f\n", xr, yr, zr, yawr*180/M_PI);
-        printf("COMMANDS: command pitch, roll, thrust, yaw: %d %d %d %d \n", CTRL_pitch, CTRL_roll, CTRL_thrust, CTRL_yaw);
-        printf("VELOCITY   : dx, dy, dz: %f %f %f \n", dxr, dyr, dzr);
-		printf("VELOCITYNED: dx, dy, dz: %f %f %f \n", dxrDeb, dyrDeb, dzrDeb);
-		printf("DESIDERED VELOCITY: dx, dy, dz: %f %f %f \n", dxd, dyd, dzd);
-		printf("ERRORS: e1, e2 %f %f\n", e1, e2);
-		printf("YAW CTRL: yawd, yawr %f %f\n", yawd, yawr);
+		//printf("\n\nROBOT POSITION: x, y, z, yaw: %f %f %f %f\n", xr, yr, zr, yawr*180/M_PI);
+        //printf("COMMANDS: command pitch, roll, thrust, yaw: %d %d %d %d \n", CTRL_pitch, CTRL_roll, CTRL_thrust, CTRL_yaw);
+        //printf("VELOCITY   : dx, dy, dz: %f %f %f \n", dxr, dyr, dzr);
+		//printf("VELOCITYNED: dx, dy, dz: %f %f %f \n", dxrDeb, dyrDeb, dzrDeb);
+		//printf("ANGLES   : pitch, roll, yaw: %f %f %f \n", theta, phi, yawr);
+		//printf("Rotation:\n %f\t %f\t %f\n %f\t %f\t %f\n%f\t %f\t %f\n", R[0], R[1], R[2], R[3], R[4], R[5], R[6], R[7], R[8]);
+		//printf("DESIDERED VELOCITY: dx, dy, dz: %f %f %f \n", dxd, dyd, dzd);
+		//printf("ERRORS: e1, e2 %f %f\n", e1, e2);
+		//printf("YAW CTRL: yawd, yawr %f %f\n", yawd, yawr);
 
         printTimeCounter = 0;
     }
