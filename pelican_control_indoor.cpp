@@ -56,29 +56,44 @@ extern int height;
 extern int landing;
 //////////////////////
 
+#define CIRCLE 0
+#define PLANE 1
+
 #define LANDING 95
 
-double Module0::function1(double x, double y, double z)
+int Nfunc1;
+int Nfunc2;
+
+
+double functionCircle(double x, double y, double z)
 {
-	return (pow(x+5, 2) - pow(y,2) - 1);
+	double radius = 3; double center_x = 0; double center_y = 0;
+	return (pow(x-center_x,2) - pow(y-center_y,2) - pow(radius,2));
 }
 
-double Module0::function2(double x, double y, double z)
+double functionPlane(double x, double y, double z)
 {
-	return (z);
+	double k_x = 0; double k_y = 0; double k_z = 1;
+	return (k_x * x + k_y * y + k_z * z);
 }
-//Calcolo dei gradienti
-void Module0::fgrad1(double x, double y, double z, double *res){
-	res[0] = 2*(x+5);
-	res[1] = 2*(y);
+
+
+void fgradCircle(double *res, double x, double y, double z){
+	double radius = 3; double center_x = 0; double center_y = 0;
+	res[0] = 2*(x-center_x);
+	res[1] = 2*(y-center_y);
 	res[2] = 0;
 }
 
-void Module0::fgrad2(double x, double y, double z, double *res){
-	res[0] = 0;
-	res[1] = 0;
-	res[2] = 1;
+void fgradPlane(double *res, double x, double y, double z){
+	double k_x = 0; double k_y = 0; double k_z = 1;
+	res[0] = k_x;
+	res[1] = k_y;
+	res[2] = k_z;
 }
+
+double (*array_function[2])(double, double, double) = { functionCircle, functionPlane };
+void (*array_fgrad[2])(double*, double, double, double) = { fgradCircle, fgradPlane };
 
 void normalize1(Mat mat){
 	if (norm(mat,NORM_L2) != 0){
@@ -161,6 +176,9 @@ Module0::loadParams() {
 	//Punto target per telecamera drone.
 	x_target = 0;
 	y_target = 0;
+
+	Nfunc1 = 0;
+	Nfunc2 = 1;
 }
 
 //A text file to save the parameters is initialized with the variables to be saved
@@ -235,6 +253,8 @@ Module0::DoYourDuty (int wc)
 	double dyrDeb=0;
 	double dzrDeb=0;
 
+	
+
 	static double *R = new double[9];
 
     printTimeCounter++; 
@@ -251,15 +271,14 @@ Module0::DoYourDuty (int wc)
 		message_rec++;
 		if (rxMsg->ReadType() == 1)
 		{
-			loadParams();			//QUESTO VUOL DIRE FARE UN RESET DEI PARAMETRI (integrale, ecc) ATTENZIONE!
+			loadParams();
 			cout << "********************************************" << endl;
 			cout << "*         press P to take a picture        *" << endl;
-			cout << "*        press L to load a ctrl file       *" << endl;
 			cout << "* press K to change the control parameters *" << endl;
-			cout << "* press Q to stop the waypoint operation   *" << endl;
 			cout << "*          press S to stop the motors      *" << endl;
 			cout << "*             press A to land              *" << endl;
 			cout << "********************************************" << endl;
+
 		}
 		else if (rxMsg->ReadType() == 3)
 		{
@@ -267,9 +286,18 @@ Module0::DoYourDuty (int wc)
 			yr = *((double*)((char*)(rxMsg->ReadData()) + sizeof(double)));
 			zr = *((double*)((char*)(rxMsg->ReadData()) + 2 * sizeof(double)));
 			yawr = *((double*)((char*)(rxMsg->ReadData()) + 3 * sizeof(double)));
-			dxr = *((double*)((char*)(rxMsg->ReadData()) + 4 * sizeof(double)));
-			dyr = *((double*)((char*)(rxMsg->ReadData()) + 5 * sizeof(double)));
-			dzr = *((double*)((char*)(rxMsg->ReadData()) + 6 * sizeof(double)));
+			if (xr != xback){
+				dxr = *((double*)((char*)(rxMsg->ReadData()) + 4 * sizeof(double)));
+				xback = xr;
+			}
+			if (yr != yback){
+				dyr = *((double*)((char*)(rxMsg->ReadData()) + 5 * sizeof(double)));
+				yback = yr;
+			}
+			if (zr != zback){
+				dzr = *((double*)((char*)(rxMsg->ReadData()) + 6 * sizeof(double)));
+				zback = zr;
+			}
 			/*dxr = (xr - xback) / mtime;
 			xback = xr;
 			dyr = (yr - yback) / mtime;
@@ -303,14 +331,6 @@ Module0::DoYourDuty (int wc)
 			dzr = dzr1;
 			
 		}
-		//ATTENZIONE, non è in ascolto su questo messaggio!?
-		/*else if (rxMsg->ReadType() == 5){		
-			int rec = *rxMsg->ReadData();
-			if (rec == LANDING)
-			{
-				landing = 1;
-			}
-		}*/
 	}
 	RemoveCurrentMsg();
 
@@ -371,7 +391,7 @@ Module0::DoYourDuty (int wc)
 
 
 	//******PROVA!
-	initialize = 1;
+	//initialize = 1;
    
     if ((initialize==0)|(ended==1))
     {
@@ -383,12 +403,19 @@ Module0::DoYourDuty (int wc)
     if ((initialize==1)&(ended==0)){
 		
 		/***CONTROLLO INIZIA QUI****/
-		e1 = function1(xr, yr, zr);
+		
+		e1 = array_function[Nfunc1](xr, yr, zr);
+		e2 = array_function[Nfunc2](xr, yr, zr);
+
+		array_fgrad[Nfunc1](grad1, xr, yr, zr);
+		array_fgrad[Nfunc2](grad2, xr, yr, zr);
+
+		/*e1 = function1(xr, yr, zr);
 		e2 = function2(xr, yr, zr);
 
-		fgrad1(xr, yr, zr, grad1);
-		fgrad2(xr, yr, zr, grad2);
-
+		fgrad1(grad1, xr, yr, zr);
+		fgrad2(grad2, xr, yr, zr);
+		*/
 		//vettori OpenCv
 
 		/*
@@ -445,7 +472,6 @@ Module0::DoYourDuty (int wc)
 
 
 		if (landing == 1){
-			printf("ATTERRAGGIO");
 			dxd = 0;
 			dyd = 0;
 			dzd = 0;
@@ -472,7 +498,18 @@ Module0::DoYourDuty (int wc)
 		//ATTERRAGGIO?
 		if (landing == 1)
 		{
-			ut = ut - 0.5;
+			if (zr > ground - 0.15){
+				landing = 0;
+				initialize = 0;
+				ut = 1400;
+				printf("atterrato\n");
+			}
+			else{
+				if ((printTimeCounter == printstep))
+					printf("Procedura di atterraggio: Thrust: %f\n", ut);
+				ut = ut - 0.5;
+			}
+
 		}else
 		ut = gravity + kpvz*(edz) + kivz*(cumulz) + kdvz*(dedz); // thrust command calculation
 
@@ -552,7 +589,7 @@ Module0::DoYourDuty (int wc)
 
     // terminal visualization (debug)
         
-   if(printTimeCounter == printstep ){
+   if((printTimeCounter == printstep)&&(initialize ==1)){
         //printf ("GPS DATA: long %d lat %d height %d", longitude, latitude, height);
         //printf ("gps_cartesian: long %f lat %f height %f \n", long_cart, lat_cart, height_cart);
         //printf ("  fus long %d lat %d height %d \n", fus_longitude, fus_latitude, fus_height);

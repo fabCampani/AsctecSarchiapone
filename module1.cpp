@@ -166,7 +166,6 @@ Module1::DoYourDuty (int wc)
         sleep(1);
         initialize3=1;
         cout << "********************************************" << endl;
-        printf("*        press 0-%d to set a waypoint       *\n", wp);
         cout << "*         press P to take a picture        *" << endl;
         cout << "* press K to change the control parameters *" << endl;
         cout << "*              press T to take off         *" << endl;
@@ -184,68 +183,49 @@ Module1::DoYourDuty (int wc)
     w=int(x)-48;
     //printf("%d",w);
 	fcntl(0, F_SETFL, O_NONBLOCK);
-		if (x=='k')
+		if (x=='k')				//parameters
         {
             ETMessage *txMessage = new ETMessage(1, SendType);
             *txMessage->GetData()=1;
             ShareMsg(txMessage);
         }
-        else if (x=='p'){
+        else if (x=='p')			//picture
+		{
             ETMessage *txMessage = new ETMessage(1, 5);
             *txMessage->GetData()=99;
             ShareMsg(txMessage);
         }
-        else if (x=='l'){
-            ETMessage *txMessage = new ETMessage(1, 5);
-            *txMessage->GetData()=98;
-            ShareMsg(txMessage);
-        }
-        else if ((w>=0) & (w<wp+1)){
-            ETMessage *txMessage = new ETMessage(1, 5);
-            *txMessage->GetData()=w;
-            ShareMsg(txMessage);
-        }
-        else if (x=='q')
-        {
-            ETMessage *txMessage = new ETMessage(1, 5);
-            *txMessage->GetData()=97;
-            ShareMsg(txMessage);
-            
-        }
-        else if (x=='s')
+        else if (x=='s')			//Stop
         {
             ended=1;
-            printf("\n Stopping \n");
-            
+            printf("\n Stopping \n");           
             //CTRL_thrust = 2300; //1300
             //aciUpdateCmdPacket(cmdCTRL);
-            //sleep(1);
-            
+            //sleep(1);      
             stopMotors();
             landing=0;
             flag=0;
             sleep(1);
             printf("\nPress CRTL+C to exit or r to fly again\n");
         }
-        else if (x=='t')
+        else if (x=='t')			//take off
         {
             printf("\n FLYING!! \n");
-            ETMessage *txMessage = new ETMessage(1, 5);
+            ETMessage *txMessage = new ETMessage(1, 1);
             *txMessage->GetData()=96;
             ShareMsg(txMessage);
             initialize=1;
-        }
-    
-        else if (x=='a')
+        }    
+        else if (x=='a')			//landing
         {
             printf("\n LANDING!! \n");
-            ETMessage *txMessage = new ETMessage(1, 5);
+            /*ETMessage *txMessage = new ETMessage(1, 5);
             *txMessage->GetData()=95;
-            ShareMsg(txMessage);
+            ShareMsg(txMessage);*/
+			landing = 1;
         }
     
-    
-        else if ((x=='r')&(ended==1))
+        else if ((x=='r')&(ended==1))		//restart
         {
             landing=0;
             initialize=0;
@@ -272,7 +252,6 @@ Module1::DoYourDuty (int wc)
             //initialize3=1;
             ended=0;
             cout << "********************************************" << endl;
-            printf("*        press 0-%d to set a waypoint       *\n", wp);
             cout << "*         press P to take a picture        *" << endl;
             cout << "* press K to change the control parameters *" << endl;
             cout << "*              press T to take off         *" << endl;

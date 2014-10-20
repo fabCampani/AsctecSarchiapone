@@ -75,8 +75,4 @@ class Module0 : public ETExpert
 		  void loadParams();
 		  void printParams();
 		  void initializeDataSaving();
-		  double function1(double x, double y, double z);
-		  double function2(double x, double y, double z);
-		  void fgrad1(double x, double y, double z, double *res);
-		  void fgrad2(double x, double y, double z, double *res);
 };
