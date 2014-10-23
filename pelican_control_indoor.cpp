@@ -63,6 +63,14 @@ extern int landing;
 int Nfunc1;
 int Nfunc2;
 
+double dxrDeb;
+double dyrDeb;
+double dzrDeb;
+
+double edx;
+double edy;
+double edz;
+
 void normalize1(Mat mat){
 	if (norm(mat,NORM_L2) != 0){
 		mat = mat / norm(mat,NORM_L2);
@@ -106,7 +114,7 @@ Module0::loadParams() {
 
 	kdvx = 0.0;
 	kdvy = 0.0;
-	kdvz = 1000.0;
+	kdvz = 0.0;
 	kdyaw = 0;
 	
 	kivx = 0;
@@ -118,12 +126,13 @@ Module0::loadParams() {
 	ke2 = -1;
 	thre1 = 100;
 	thre2 = 100;
-	ktg = 0.5;	
-	veld = 0.5;   //* m/s
+	ktg = 0.1;
 
-	ground = 1; //m
+	veld = 0.2;   //* m/s
 
-	gravity = 2200;	//da tarare
+	ground = 1.2; //m
+
+	gravity = 2450;	//da tarare
 
 	cumulx = 0,  // reset
 	cumuly = 0,
@@ -147,6 +156,10 @@ Module0::loadParams() {
 
 	Nfunc1 = 0;
 	Nfunc2 = 1;
+
+	edx = 0;
+	edy = 0;
+	edz = 0;
 }
 
 //A text file to save the parameters is initialized with the variables to be saved
@@ -162,13 +175,17 @@ Module0::initializeDataSaving() {
 		fs2 << "ctrlpitch\t";
 		fs2 << "ctrlroll\t";
 		fs2 << "ctrlthrust\t";
-		fs2 << "ctrlyaw\t";       
+		fs2 << "ctrlyaw\t"; 
+		fs2 << "edx" << "\t" << "edy" << "\t" << "edz" << "\t";
         fs2 << "x\t";
 		fs2 << "y\t";
 		fs2 << "z\t";
         fs2 << "dx\t";
 		fs2 << "dy\t";
 		fs2 << "dz\t";
+		fs2 << "dxd\t";
+		fs2 << "dyd\t";
+		fs2 << "dzd\t";
 		fs2 << "dxNED\t";
 		fs2 << "dyNED\t";
 		fs2 << "dzNED\t";
@@ -206,6 +223,10 @@ Module0::Init()
 	mtime=0; 
 	accum_time=0;
 
+	dxrDeb = 0;
+	dyrDeb = 0;
+	dzrDeb = 0;
+
 	printstep = 70; // limits the visualization of the status on the terminal
 	printTimeCounter = 0;
     gps_flag=0;
@@ -216,12 +237,6 @@ Module0::Init()
 void
 Module0::DoYourDuty (int wc)
 	{
-
-	double dxrDeb=0;
-	double dyrDeb=0;
-	double dzrDeb=0;
-
-	
 
 	static double *R = new double[9];
 
@@ -254,18 +269,9 @@ Module0::DoYourDuty (int wc)
 			yr = *((double*)((char*)(rxMsg->ReadData()) + sizeof(double)));
 			zr = *((double*)((char*)(rxMsg->ReadData()) + 2 * sizeof(double)));
 			yawr = *((double*)((char*)(rxMsg->ReadData()) + 3 * sizeof(double)));
-			if (xr != xback){
-				dxr = *((double*)((char*)(rxMsg->ReadData()) + 4 * sizeof(double)));
-				xback = xr;
-			}
-			if (yr != yback){
-				dyr = *((double*)((char*)(rxMsg->ReadData()) + 5 * sizeof(double)));
-				yback = yr;
-			}
-			if (zr != zback){
-				dzr = *((double*)((char*)(rxMsg->ReadData()) + 6 * sizeof(double)));
-				zback = zr;
-			}
+			dxr = *((double*)((char*)(rxMsg->ReadData()) + 4 * sizeof(double)));
+			dyr = *((double*)((char*)(rxMsg->ReadData()) + 5 * sizeof(double)));
+			dzr = *((double*)((char*)(rxMsg->ReadData()) + 6 * sizeof(double)));
 			/*dxr = (xr - xback) / mtime;
 			xback = xr;
 			dyr = (yr - yback) / mtime;
@@ -407,7 +413,6 @@ Module0::DoYourDuty (int wc)
 		//guadagno sull'errore
 		e1 = ke1*e1;
 		e2 = ke2*e2;
-		//ATTENZIONE!! normalizzazione con modulo 0; Fatto.
 		
 		//Prodotto vettore
 		double Tang[]
@@ -444,9 +449,10 @@ Module0::DoYourDuty (int wc)
 			dyd = 0;
 			dzd = 0;
 		}
-		double edx = dxd - dxr;
-		double edy = dyd - dyr;
-		double edz = dzd - dzr;
+
+		edx = dxd - dxr;
+		edy = dyd - dyr;
+		edz = dzd - dzr;
 
 		cumulx = cumulx + edx*mtime;
 		cumuly = cumuly + edy*mtime;
@@ -466,7 +472,7 @@ Module0::DoYourDuty (int wc)
 		//ATTERRAGGIO?
 		if (landing == 1)
 		{
-			if (zr > ground - 0.15){
+			if (zr > ground - 0.1){
 				landing = 0;
 				initialize = 0;
 				ut = 1400;
@@ -475,7 +481,7 @@ Module0::DoYourDuty (int wc)
 			else{
 				if ((printTimeCounter == printstep))
 					printf("Procedura di atterraggio: Thrust: %f\n", ut);
-				ut = ut - 0.5;
+				ut = ut - 0.2;
 			}
 
 		}else
@@ -489,7 +495,7 @@ Module0::DoYourDuty (int wc)
 		yawd = atan2(y_target, x_target);
 		eyaw = sin(yawd - yawr);
 		uy = kpyaw*(eyaw);
-            
+
         // thresholds to avoid too fast movements
         int16_t CTRL_back;
         int16_t thr3 = 50;
@@ -545,8 +551,10 @@ Module0::DoYourDuty (int wc)
     //fs2 << longitude << "\t" << latitude << "\t" << height << "\t";
     //fs2 << fus_longitude << "\t" << fus_latitude << "\t" << fus_height << "\t";
     //fs2 << GPS_heading << "\t" << position_accuracy << "\t" << height_accuracy << "\t" << GPS_num << "\t" << GPS_status << "\t";
+	fs2 << edx << "\t" << edy << "\t" << edz << "\t";
     fs2 << xr << "\t" << yr << "\t" << zr << "\t";
     fs2 << dxr << "\t" << dyr << "\t" << dzr<<"\t";
+	fs2 << dxd << "\t" << dyd << "\t" << dzd << "\t";
 	fs2 << dxrDeb << "\t" << dyrDeb << "\t" << dzrDeb << "\t";
     fs2 << theta << "\t" << phi << "\t" << yawr << "\t";
     fs2 <<  "\n";
@@ -557,20 +565,21 @@ Module0::DoYourDuty (int wc)
 
     // terminal visualization (debug)
         
-   if((printTimeCounter == printstep)&&(initialize ==1)){
+   if((printTimeCounter == printstep)){
         //printf ("GPS DATA: long %d lat %d height %d", longitude, latitude, height);
         //printf ("gps_cartesian: long %f lat %f height %f \n", long_cart, lat_cart, height_cart);
         //printf ("  fus long %d lat %d height %d \n", fus_longitude, fus_latitude, fus_height);
         //printf ("GPS STATUS:  gps: heading: %d, yaw: %f, accuracy: %d, height accuracy: %d, sat: %d, status: %d  \n", GPS_heading, psi, position_accuracy, height_accuracy, GPS_num, GPS_status);       
-		//printf("\n\nROBOT POSITION: x, y, z, yaw: %f %f %f %f\n", xr, yr, zr, yawr*180/M_PI);
-        //printf("COMMANDS: command pitch, roll, thrust, yaw: %d %d %d %d \n", CTRL_pitch, CTRL_roll, CTRL_thrust, CTRL_yaw);
+		printf("\n\nROBOT POSITION: x, y, z, yaw: %f %f %f %f\n", xr, yr, zr, yawr*180/M_PI);
+        printf("COMMANDS: command pitch, roll, thrust, yaw: %d %d %d %d \n", CTRL_pitch, CTRL_roll, CTRL_thrust, CTRL_yaw);
+		printf("COMMANDS: edx, edy, edz: %f %f %f \n", edx, edy, edz);
         //printf("VELOCITY   : dx, dy, dz: %f %f %f \n", dxr, dyr, dzr);
 		//printf("VELOCITYNED: dx, dy, dz: %f %f %f \n", dxrDeb, dyrDeb, dzrDeb);
 		//printf("ANGLES   : pitch, roll, yaw: %f %f %f \n", theta, phi, yawr);
 		//printf("Rotation:\n %f\t %f\t %f\n %f\t %f\t %f\n%f\t %f\t %f\n", R[0], R[1], R[2], R[3], R[4], R[5], R[6], R[7], R[8]);
 		//printf("DESIDERED VELOCITY: dx, dy, dz: %f %f %f \n", dxd, dyd, dzd);
-		//printf("ERRORS: e1, e2 %f %f\n", e1, e2);
-		//printf("YAW CTRL: yawd, yawr %f %f\n", yawd, yawr);
+		printf("ERRORS: e1, e2 %f %f\n", e1, e2);
+		printf("YAW CTRL: yawd, yawr %f %f\n", yawd, yawr);
 
         printTimeCounter = 0;
     }
