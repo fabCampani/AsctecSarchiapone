@@ -107,7 +107,7 @@ Module0::printParams() {
 void
 Module0::loadParams() {
 	kpvx = -550;
-	kpvy = -550;
+	kpvy = 550;
 	kpvz = -200.0;
 
 	kpyaw = 1500.0;
