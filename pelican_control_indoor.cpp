@@ -106,9 +106,9 @@ Module0::printParams() {
 // When new params are loaded, the integrative action is set to zero.
 void
 Module0::loadParams() {
-	kpvx = -550;
-	kpvy = 550;
-	kpvz = -200.0;
+	kpvx = -700;
+	kpvy = 700;
+	kpvz = -800.0;
 
 	kpyaw = 1500.0;
 
@@ -119,20 +119,20 @@ Module0::loadParams() {
 	
 	kivx = 0;
 	kivy = 0;
-	kivz = -0.5;
+	kivz = -5;
 	kiyaw = 0;	
 	
 	ke1 = -1;
 	ke2 = -1;
 	thre1 = 100;
 	thre2 = 100;
-	ktg = 0.1;
+	ktg = 0.2;
 
 	veld = 0.2;   //* m/s
 
-	ground = 1.2; //m
+	ground = 1.45; //m
 
-	gravity = 2450;	//da tarare
+	gravity = 2300;	//da tarare
 
 	cumulx = 0,  // reset
 	cumuly = 0,
@@ -154,8 +154,8 @@ Module0::loadParams() {
 	x_target = 0;
 	y_target = 0;
 
-	Nfunc1 = 2;
-	Nfunc2 = 1;
+	Nfunc1 = CIRCLE;
+	Nfunc2 = PLANE;
 
 	edx = 0;
 	edy = 0;
@@ -472,10 +472,13 @@ Module0::DoYourDuty (int wc)
 		//ATTERRAGGIO?
 		if (landing == 1)
 		{
-			if (zr > ground - 0.1){
+			if (zr > ground - 0.07){
+				/*
 				landing = 0;
 				initialize = 0;
+				ended = 1;
 				ut = 1400;
+				*/
 				printf("atterrato\n");
 			}
 			else{
@@ -570,16 +573,16 @@ Module0::DoYourDuty (int wc)
         //printf ("gps_cartesian: long %f lat %f height %f \n", long_cart, lat_cart, height_cart);
         //printf ("  fus long %d lat %d height %d \n", fus_longitude, fus_latitude, fus_height);
         //printf ("GPS STATUS:  gps: heading: %d, yaw: %f, accuracy: %d, height accuracy: %d, sat: %d, status: %d  \n", GPS_heading, psi, position_accuracy, height_accuracy, GPS_num, GPS_status);       
-		printf("\n\nROBOT POSITION: x, y, z, yaw: %f %f %f %f\n", xr, yr, zr, yawr*180/M_PI);
-        printf("COMMANDS: command pitch, roll, thrust, yaw: %d %d %d %d \n", CTRL_pitch, CTRL_roll, CTRL_thrust, CTRL_yaw);
-		printf("COMMANDS: edx, edy, edz: %f %f %f \n", edx, edy, edz);
+		//printf("\n\nROBOT POSITION: x, y, z, yaw: %f %f %f %f\n", xr, yr, zr, yawr*180/M_PI);
+        //printf("COMMANDS: command pitch, roll, thrust, yaw: %d %d %d %d \n", CTRL_pitch, CTRL_roll, CTRL_thrust, CTRL_yaw);
+		//printf("COMMANDS: edx, edy, edz: %f %f %f \n", edx, edy, edz);
         //printf("VELOCITY   : dx, dy, dz: %f %f %f \n", dxr, dyr, dzr);
 		//printf("VELOCITYNED: dx, dy, dz: %f %f %f \n", dxrDeb, dyrDeb, dzrDeb);
 		//printf("ANGLES   : pitch, roll, yaw: %f %f %f \n", theta, phi, yawr);
 		//printf("Rotation:\n %f\t %f\t %f\n %f\t %f\t %f\n%f\t %f\t %f\n", R[0], R[1], R[2], R[3], R[4], R[5], R[6], R[7], R[8]);
 		//printf("DESIDERED VELOCITY: dx, dy, dz: %f %f %f \n", dxd, dyd, dzd);
-		printf("ERRORS: e1, e2 %f %f\n", e1, e2);
-		printf("YAW CTRL: yawd, yawr %f %f\n", yawd, yawr);
+		//printf("ERRORS: e1, e2 %f %f\n", e1, e2);
+		//printf("YAW CTRL: yawd, yawr %f %f\n", yawd, yawr);
 
         printTimeCounter = 0;
     }
