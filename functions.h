@@ -1,4 +1,4 @@
-#define maxFunct 2
+#define maxFunct 3
 
 #define CIRCLE 0
 #define PLANE 1
@@ -30,6 +30,19 @@ void fgradPlane(double *res, double x, double y, double z){
 	res[2] = k_z;
 }
 
-double(*array_function[maxFunct])(double, double, double) = { functionCircle, functionPlane };
-void(*array_fgrad[maxFunct])(double*, double, double, double) = { fgradCircle, fgradPlane };
+double functionPlane2(double x, double y, double z)
+{
+	double k_x = 1; double k_y = 0; double k_z = 0;
+	return (k_x * x + k_y * y + k_z * z + 2.5);
+}
+
+void fgradPlane2(double *res, double x, double y, double z){
+	double k_x = 1; double k_y = 0; double k_z = 0;
+	res[0] = k_x;
+	res[1] = k_y;
+	res[2] = k_z;
+}
+
+double(*array_function[maxFunct])(double, double, double) = { functionCircle, functionPlane, functionPlane2 };
+void(*array_fgrad[maxFunct])(double*, double, double, double) = { fgradCircle, fgradPlane, fgradPlane2 };
 

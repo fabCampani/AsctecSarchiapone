@@ -107,7 +107,7 @@ Module0::printParams() {
 void
 Module0::loadParams() {
 	kpvx = -550;
-	kpvy = 550;
+	kpvy = -550;
 	kpvz = -200.0;
 
 	kpyaw = 1500.0;
@@ -154,7 +154,7 @@ Module0::loadParams() {
 	x_target = 0;
 	y_target = 0;
 
-	Nfunc1 = 0;
+	Nfunc1 = 2;
 	Nfunc2 = 1;
 
 	edx = 0;
