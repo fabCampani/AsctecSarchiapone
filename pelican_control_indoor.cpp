@@ -115,7 +115,7 @@ Module0::loadParams() {
 	kdvx = 0.0;
 	kdvy = 0.0;
 	kdvz = 0.0;
-	kdyaw = 0;
+	kdyaw = 0.0;
 	
 	kivx = 0;
 	kivy = 0;
@@ -126,6 +126,7 @@ Module0::loadParams() {
 	ke2 = -1;
 	thre1 = 100;
 	thre2 = 100;
+	//Costante per componente tangente:
 	ktg = 0.2;
 
 	veld = 0.2;   //* m/s
@@ -272,14 +273,6 @@ Module0::DoYourDuty (int wc)
 			dxr = *((double*)((char*)(rxMsg->ReadData()) + 4 * sizeof(double)));
 			dyr = *((double*)((char*)(rxMsg->ReadData()) + 5 * sizeof(double)));
 			dzr = *((double*)((char*)(rxMsg->ReadData()) + 6 * sizeof(double)));
-			/*dxr = (xr - xback) / mtime;
-			xback = xr;
-			dyr = (yr - yback) / mtime;
-			yback = yr;
-
-			dzr = (zr - zback) / mtime;
-			zback = zr;
-			*/
 			dyawr = *((double*)((char*)(rxMsg->ReadData()) + 7 * sizeof(double)));
 
 			R[0] = cos(theta) * cos(yawr);
@@ -316,56 +309,6 @@ Module0::DoYourDuty (int wc)
 	accum_time = accum_time + mtime;
 	gettimeofday(&starttime2, NULL);
 
-	/*
-	static double *R = new double[9];
-	
-	R[0] = cos(theta) * cos(yawr);
-	R[3] = -cos(phi) * sin(yawr) + sin(phi) * sin(theta) * cos(yawr);
-	R[6] = sin(phi) * sin(yawr) + cos(phi) * sin(theta) * cos(yawr);
-	R[1] = cos(theta) * sin(yawr);
-	R[4] = cos(phi) * cos(yawr) + sin(phi) * sin(theta) * sin(yawr);
-	R[7] = -sin(phi) * cos(yawr) + cos(phi) * sin(theta) * sin(yawr);
-	R[2] = -sin(theta);
-	R[5] = sin(phi) * cos(theta);
-	R[8] = cos(phi) * cos(theta);
-	
-	/*
-	R[0] = cos(theta) * cos(yawr);
-	R[1] = -cos(phi) * sin(yawr) + sin(phi) * sin(theta) * cos(yawr);
-	R[2] = sin(phi) * sin(yawr) + cos(phi) * sin(theta) * cos(yawr);
-	R[3] = cos(theta) * sin(yawr);
-	R[4] = cos(phi) * cos(yawr) + sin(phi) * sin(theta) * sin(yawr);
-	R[5] = -sin(phi) * cos(yawr) + cos(phi) * sin(theta) * sin(yawr);
-	R[6] = -sin(theta);
-	R[7] = sin(phi) * cos(theta);
-	R[8] = cos(phi) * cos(theta);
-	//*/
-	
-	/*
-	cv::Mat RotMat(3, 3, CV_32F, R);
-
-	cv::Mat dxyz(3, 1, CV_32F, { dxr, dyr, dzr });
-	dxyz = RotMat * dxyz;
-	//*/
-	/*
-	//DEBUG: velocità in NED frame
-	dxrDeb = dxr;
-	dyrDeb = dyr;
-	dzrDeb = dzr;
-
-
-	double dxr1 = R[0] * dxr + R[1] * dyr + R[2] * dzr;
-	double dyr1 = R[3] * dxr + R[4] * dyr + R[5] * dzr;
-	double dzr1 = R[6] * dxr + R[7] * dyr + R[8] * dzr;
-
-	dxr = dxr1;
-	dyr = dyr1;
-	dzr = dzr1;
-	*/
-
-
-	//******PROVA!
-	//initialize = 1;
    
     if ((initialize==0)|(ended==1))
     {
@@ -383,19 +326,6 @@ Module0::DoYourDuty (int wc)
 
 		array_fgrad[Nfunc1](grad1, xr, yr, zr);
 		array_fgrad[Nfunc2](grad2, xr, yr, zr);
-
-		/*e1 = function1(xr, yr, zr);
-		e2 = function2(xr, yr, zr);
-
-		fgrad1(grad1, xr, yr, zr);
-		fgrad2(grad2, xr, yr, zr);
-		*/
-		//vettori OpenCv
-
-		/*
-		cv::Mat Grad1(3, 1, CV_32F, grad1);
-		cv::Mat Grad2(3, 1, CV_32F, grad2);
-		//*/
 
 		//Soglia errore
 		if (e1 > thre1){
@@ -468,6 +398,7 @@ Module0::DoYourDuty (int wc)
 		edzback = edz;
 
         up = pitchOffset + kpvx*(edx) + kivx*(cumulx) + kdvx*(dedx); // pitch command
+		
 		ur = rollOffset + kpvy*(edy) + kivy*(cumuly)+ kdvy*(dedy); // roll command
 		//ATTERRAGGIO?
 		if (landing == 1)
