@@ -60,17 +60,20 @@ extern int landing;
 
 #define LANDING 95
 
+//Tipo di funzione
 int Nfunc1;
 int Nfunc2;
 
+//Velocità frame NED (debug)
 double dxrDeb;
 double dyrDeb;
 double dzrDeb;
-
+//Errori
 double edx;
 double edy;
 double edz;
 
+//Funzione di normalizzazione(OpenCV) {non utilizzata}
 void normalize1(Mat mat){
 	if (norm(mat,NORM_L2) != 0){
 		mat = mat / norm(mat,NORM_L2);
@@ -78,7 +81,7 @@ void normalize1(Mat mat){
 	else
 		mat = 0.0 * mat;
 }
-
+//Funzione normallizzazione vettori
 void normalize1(double *vett){
 	double norm = sqrt(pow(vett[0], 2) + pow(vett[1], 2) + pow(vett[2], 2));
 	if (norm == 0)
@@ -102,8 +105,7 @@ Module0::printParams() {
 
 }
 
-// function used to load control parameters (from "firefly_params_out.txt" and "pelican_params_out.txt" from the Build folder)
-// When new params are loaded, the integrative action is set to zero.
+//Carciamento parametri (per ora solo definizione dei parametri)
 void
 Module0::loadParams() {
 	kpvx = -700;
@@ -117,8 +119,8 @@ Module0::loadParams() {
 	kdvz = 0.0;
 	kdyaw = 0.0;
 	
-	kivx = 0;
-	kivy = 0;
+	kivx = -10;
+	kivy = 10;
 	kivz = -5;
 	kiyaw = 0;	
 	
@@ -129,11 +131,15 @@ Module0::loadParams() {
 	//Costante per componente tangente:
 	ktg = 0.2;
 
+	//velocità di marcia
 	veld = 0.2;   //* m/s
 
+	//altezza del suolo
 	ground = 1.45; //m
 
-	gravity = 2300;	//da tarare
+	//gravity compensation
+	gravity = 2320;	//da tarare
+
 
 	cumulx = 0,  // reset
 	cumuly = 0,
@@ -155,7 +161,8 @@ Module0::loadParams() {
 	x_target = 0;
 	y_target = 0;
 
-	Nfunc1 = CIRCLE;
+	//funzioni
+	Nfunc1 = PLANE2;
 	Nfunc2 = PLANE;
 
 	edx = 0;
@@ -221,6 +228,7 @@ Module0::Init()
 	loadParams(); 
 	initializeDataSaving();
 	gettimeofday(&starttime2, NULL);
+	
 	mtime=0; 
 	accum_time=0;
 
@@ -340,6 +348,7 @@ Module0::DoYourDuty (int wc)
 		else if (e2 < -thre2){
 			e2 = -thre2;
 		}
+		
 		//guadagno sull'errore
 		e1 = ke1*e1;
 		e2 = ke2*e2;
@@ -400,7 +409,9 @@ Module0::DoYourDuty (int wc)
         up = pitchOffset + kpvx*(edx) + kivx*(cumulx) + kdvx*(dedx); // pitch command
 		
 		ur = rollOffset + kpvy*(edy) + kivy*(cumuly)+ kdvy*(dedy); // roll command
-		//ATTERRAGGIO?
+		
+		//Procedura di ATTERRAGGIO
+
 		if (landing == 1)
 		{
 			if (zr > ground - 0.07){
@@ -414,7 +425,7 @@ Module0::DoYourDuty (int wc)
 			}
 			else{
 				if ((printTimeCounter == printstep))
-					printf("Procedura di atterraggio: Thrust: %f\n", ut);
+					//printf("Procedura di atterraggio: Thrust: %f\n", ut);
 				ut = ut - 0.2;
 			}
 
@@ -514,7 +525,6 @@ Module0::DoYourDuty (int wc)
 		//printf("DESIDERED VELOCITY: dx, dy, dz: %f %f %f \n", dxd, dyd, dzd);
 		//printf("ERRORS: e1, e2 %f %f\n", e1, e2);
 		//printf("YAW CTRL: yawd, yawr %f %f\n", yawd, yawr);
-
         printTimeCounter = 0;
     }
 	
