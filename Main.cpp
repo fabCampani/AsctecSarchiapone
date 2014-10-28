@@ -196,7 +196,7 @@ void loadParams() {
 	x_target = 0;
 	y_target = 0;
 
-	Nfunc1 = CIRCLE;
+	Nfunc1 = 2;
 	Nfunc2 = PLANE;
 
 	edx = 0;
