@@ -108,8 +108,8 @@ Module0::printParams() {
 //Carciamento parametri (per ora solo definizione dei parametri)
 void
 Module0::loadParams() {
-	kpvx = -700;
-	kpvy = 700;
+	kpvx = -900;
+	kpvy = 900;
 	kpvz = -800.0;
 
 	kpyaw = 1500.0;
@@ -138,14 +138,14 @@ Module0::loadParams() {
 	ground = 1.45; //m
 
 	//gravity compensation
-	gravity = 2350;	//da tarare
+	gravity = 2460;	//da tarare
 
 
 	cumulx = 0,  // reset
 	cumuly = 0,
 	cumulz = 0,
 	cumulyaw = 0;
-	pitchOffset = 0;  // pitch offset, manually estimated
+	pitchOffset = 90;  // pitch offset, manually estimated
 	rollOffset = 0;  // roll offset
 	yawOffset = 0;
 
@@ -176,7 +176,7 @@ Module0::loadParams() {
 		//2nd line: kix kiy kiz
 		//3rd line: kdx kdy kdz
 		//4th line: ktg speed
-		//5th line: gravity compensation
+		//5th line: gravitycompensation pitchOffset
 		fs >> kpvx;
 		fs >> kpvy;
 		fs >> kpvz;
@@ -192,6 +192,7 @@ Module0::loadParams() {
 		fs >> ktg;
 		fs >> veld;
 		fs >> gravity;
+		fs >> pitchOffset;
 	}
 }
 
