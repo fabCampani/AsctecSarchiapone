@@ -119,8 +119,8 @@ Module0::loadParams() {
 	kdvz = 0.0;
 	kdyaw = 0.0;
 	
-	kivx = -10;
-	kivy = 10;
+	kivx = 0; //10?
+	kivy = 0;
 	kivz = -5;
 	kiyaw = 0;	
 	
@@ -138,7 +138,7 @@ Module0::loadParams() {
 	ground = 1.45; //m
 
 	//gravity compensation
-	gravity = 2320;	//da tarare
+	gravity = 2350;	//da tarare
 
 
 	cumulx = 0,  // reset
@@ -168,6 +168,31 @@ Module0::loadParams() {
 	edx = 0;
 	edy = 0;
 	edz = 0;
+	//Carcamento parametri da file
+	ifstream fs("params2.txt");	
+	if (fs.is_open()){
+		//file format:
+		//1st line: kpx kpy kpz
+		//2nd line: kix kiy kiz
+		//3rd line: kdx kdy kdz
+		//4th line: ktg speed
+		//5th line: gravity compensation
+		fs >> kpvx;
+		fs >> kpvy;
+		fs >> kpvz;
+
+		fs >> kivx;
+		fs >> kivy;
+		fs >> kivz;
+
+		fs >> kdvx;
+		fs >> kdvy;
+		fs >> kdvz;
+
+		fs >> ktg;
+		fs >> veld;
+		fs >> gravity;
+	}
 }
 
 //A text file to save the parameters is initialized with the variables to be saved
@@ -199,7 +224,24 @@ Module0::initializeDataSaving() {
 		fs2 << "dzNED\t";
 		fs2 << "pitch\t";
 		fs2 << "roll\t";
-		fs2 << "yaw\n";
+		fs2 << "yaw\t";
+		//Parameters
+		fs2 << "kpvx\t";
+		fs2 << "kpvy\t";
+		fs2 << "kpvz\t";
+
+		fs2 << "kivx\t";
+		fs2 << "kivy\t";
+		fs2 << "kivz\t";
+
+		fs2 << "kdvx\t";
+		fs2 << "kdvy\t";
+		fs2 << "kdvz\t";
+
+		fs2 << "ktg\t";
+		fs2 << "veld\t";
+		fs2 << "gravity\n";
+		
 
 		cout << "File with controls initialized" << endl;
 	} else {
@@ -270,7 +312,6 @@ Module0::DoYourDuty (int wc)
 			cout << "*          press S to stop the motors      *" << endl;
 			cout << "*             press A to land              *" << endl;
 			cout << "********************************************" << endl;
-
 		}
 		else if (rxMsg->ReadType() == 3)
 		{
@@ -378,10 +419,16 @@ Module0::DoYourDuty (int wc)
 		SumNED[1] *= veld;
 		SumNED[2] *= veld;
 
+		/*
 		dxd = R[0] * SumNED[0] + R[1] * SumNED[1] + R[2] * SumNED[2];
 		dyd = R[3] * SumNED[0] + R[4] * SumNED[1] + R[5] * SumNED[2];
 		dzd = R[6] * SumNED[0] + R[7] * SumNED[1] + R[8] * SumNED[2];
-
+		*/
+		/*ATTENZIONE!*/
+		//Setup Controllore PID
+		dxd = 0;
+		dyd = 0;
+		dzd = 0;
 
 		if (landing == 1){
 			dxd = 0;
@@ -502,7 +549,23 @@ Module0::DoYourDuty (int wc)
 	fs2 << dxd << "\t" << dyd << "\t" << dzd << "\t";
 	fs2 << dxrDeb << "\t" << dyrDeb << "\t" << dzrDeb << "\t";
     fs2 << theta << "\t" << phi << "\t" << yawr << "\t";
+	fs2 << kpvx << "\t";
+	fs2 << kpvy << "\t";
+	fs2 << kpvz << "\t";
+
+	fs2 << kivx << "\t";
+	fs2 << kivy << "\t";
+	fs2 << kivz << "\t";
+
+	fs2 << kdvx << "\t";
+	fs2 << kdvy << "\t";
+	fs2 << kdvz << "\t";
+
+	fs2 << ktg << "\t";
+	fs2 << veld << "\t";
+	fs2 << gravity << "\t";
     fs2 <<  "\n";
+
 	}
 	else {
 	cerr << "File not open!" << endl;
@@ -516,13 +579,13 @@ Module0::DoYourDuty (int wc)
         //printf ("  fus long %d lat %d height %d \n", fus_longitude, fus_latitude, fus_height);
         //printf ("GPS STATUS:  gps: heading: %d, yaw: %f, accuracy: %d, height accuracy: %d, sat: %d, status: %d  \n", GPS_heading, psi, position_accuracy, height_accuracy, GPS_num, GPS_status);       
 		//printf("\n\nROBOT POSITION: x, y, z, yaw: %f %f %f %f\n", xr, yr, zr, yawr*180/M_PI);
-        //printf("COMMANDS: command pitch, roll, thrust, yaw: %d %d %d %d \n", CTRL_pitch, CTRL_roll, CTRL_thrust, CTRL_yaw);
+        printf("COMMANDS: command pitch, roll, thrust, yaw: %d %d %d %d \n", CTRL_pitch, CTRL_roll, CTRL_thrust, CTRL_yaw);
 		//printf("COMMANDS: edx, edy, edz: %f %f %f \n", edx, edy, edz);
-        //printf("VELOCITY   : dx, dy, dz: %f %f %f \n", dxr, dyr, dzr);
+        printf("VELOCITY   : dx, dy, dz: %f %f %f \n", dxr, dyr, dzr);
 		//printf("VELOCITYNED: dx, dy, dz: %f %f %f \n", dxrDeb, dyrDeb, dzrDeb);
 		//printf("ANGLES   : pitch, roll, yaw: %f %f %f \n", theta, phi, yawr);
 		//printf("Rotation:\n %f\t %f\t %f\n %f\t %f\t %f\n%f\t %f\t %f\n", R[0], R[1], R[2], R[3], R[4], R[5], R[6], R[7], R[8]);
-		//printf("DESIDERED VELOCITY: dx, dy, dz: %f %f %f \n", dxd, dyd, dzd);
+		printf("DESIDERED VELOCITY: dx, dy, dz: %f %f %f \n", dxd, dyd, dzd);
 		//printf("ERRORS: e1, e2 %f %f\n", e1, e2);
 		//printf("YAW CTRL: yawd, yawr %f %f\n", yawd, yawr);
         printTimeCounter = 0;

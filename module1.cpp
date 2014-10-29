@@ -185,7 +185,7 @@ Module1::DoYourDuty (int wc)
 	fcntl(0, F_SETFL, O_NONBLOCK);
 		if (x=='k')				//parameters
         {
-            ETMessage *txMessage = new ETMessage(1, SendType);
+            ETMessage *txMessage = new ETMessage(1, /*SendType*/ 1);
             *txMessage->GetData()=1;
             ShareMsg(txMessage);
         }
