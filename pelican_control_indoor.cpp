@@ -105,12 +105,12 @@ Module0::printParams() {
 
 }
 
-//Carciamento parametri (per ora solo definizione dei parametri)
+//Carciamento parametri (da file params2.txt se esiste)
 void
 Module0::loadParams() {
-	kpvx = -900;
-	kpvy = 900;
-	kpvz = -800.0;
+	kpvx = -850;
+	kpvy = 820;
+	kpvz = -600.0;
 
 	kpyaw = 1500.0;
 
@@ -119,9 +119,9 @@ Module0::loadParams() {
 	kdvz = 0.0;
 	kdyaw = 0.0;
 	
-	kivx = 0; //10?
-	kivy = 0;
-	kivz = -5;
+	kivx = -16;
+	kivy = 14;
+	kivz = -10;
 	kiyaw = 0;	
 	
 	ke1 = -1;
@@ -132,20 +132,20 @@ Module0::loadParams() {
 	ktg = 0.2;
 
 	//velocità di marcia
-	veld = 0.2;   //* m/s
+	veld = 0.2;   // m/s
 
 	//altezza del suolo
-	ground = 1.45; //m
+	ground = 1.45; // m
 
 	//gravity compensation
-	gravity = 2460;	//da tarare
+	gravity = 2540;	//da tarare
 
 
 	cumulx = 0,  // reset
 	cumuly = 0,
 	cumulz = 0,
 	cumulyaw = 0;
-	pitchOffset = 90;  // pitch offset, manually estimated
+	pitchOffset = 165;  // pitch offset, manually estimated
 	rollOffset = 0;  // roll offset
 	yawOffset = 0;
 
@@ -211,6 +211,7 @@ Module0::initializeDataSaving() {
 		fs2 << "ctrlthrust\t";
 		fs2 << "ctrlyaw\t"; 
 		fs2 << "edx" << "\t" << "edy" << "\t" << "edz" << "\t";
+		fs2 << "cumulx" << "\t" << "cumuly" << "\t" << "cumulz" << "\t";
         fs2 << "x\t";
 		fs2 << "y\t";
 		fs2 << "z\t";
@@ -241,7 +242,9 @@ Module0::initializeDataSaving() {
 
 		fs2 << "ktg\t";
 		fs2 << "veld\t";
+		fs2 << "pitchoff\t";
 		fs2 << "gravity\n";
+
 		
 
 		cout << "File with controls initialized" << endl;
@@ -545,6 +548,7 @@ Module0::DoYourDuty (int wc)
     //fs2 << fus_longitude << "\t" << fus_latitude << "\t" << fus_height << "\t";
     //fs2 << GPS_heading << "\t" << position_accuracy << "\t" << height_accuracy << "\t" << GPS_num << "\t" << GPS_status << "\t";
 	fs2 << edx << "\t" << edy << "\t" << edz << "\t";
+	fs2 << cumulx << "\t" << cumuly << "\t" << cumulz << "\t";
     fs2 << xr << "\t" << yr << "\t" << zr << "\t";
     fs2 << dxr << "\t" << dyr << "\t" << dzr<<"\t";
 	fs2 << dxd << "\t" << dyd << "\t" << dzd << "\t";
@@ -564,6 +568,7 @@ Module0::DoYourDuty (int wc)
 
 	fs2 << ktg << "\t";
 	fs2 << veld << "\t";
+	fs2 << pitchOffset << "\t";
 	fs2 << gravity << "\t";
     fs2 <<  "\n";
 
@@ -580,13 +585,13 @@ Module0::DoYourDuty (int wc)
         //printf ("  fus long %d lat %d height %d \n", fus_longitude, fus_latitude, fus_height);
         //printf ("GPS STATUS:  gps: heading: %d, yaw: %f, accuracy: %d, height accuracy: %d, sat: %d, status: %d  \n", GPS_heading, psi, position_accuracy, height_accuracy, GPS_num, GPS_status);       
 		//printf("\n\nROBOT POSITION: x, y, z, yaw: %f %f %f %f\n", xr, yr, zr, yawr*180/M_PI);
-        printf("COMMANDS: command pitch, roll, thrust, yaw: %d %d %d %d \n", CTRL_pitch, CTRL_roll, CTRL_thrust, CTRL_yaw);
+        //printf("COMMANDS: command pitch, roll, thrust, yaw: %d %d %d %d \n", CTRL_pitch, CTRL_roll, CTRL_thrust, CTRL_yaw);
 		//printf("COMMANDS: edx, edy, edz: %f %f %f \n", edx, edy, edz);
-        printf("VELOCITY   : dx, dy, dz: %f %f %f \n", dxr, dyr, dzr);
+        //printf("VELOCITY   : dx, dy, dz: %f %f %f \n", dxr, dyr, dzr);
 		//printf("VELOCITYNED: dx, dy, dz: %f %f %f \n", dxrDeb, dyrDeb, dzrDeb);
 		//printf("ANGLES   : pitch, roll, yaw: %f %f %f \n", theta, phi, yawr);
 		//printf("Rotation:\n %f\t %f\t %f\n %f\t %f\t %f\n%f\t %f\t %f\n", R[0], R[1], R[2], R[3], R[4], R[5], R[6], R[7], R[8]);
-		printf("DESIDERED VELOCITY: dx, dy, dz: %f %f %f \n", dxd, dyd, dzd);
+		//printf("DESIDERED VELOCITY: dx, dy, dz: %f %f %f \n", dxd, dyd, dzd);
 		//printf("ERRORS: e1, e2 %f %f\n", e1, e2);
 		//printf("YAW CTRL: yawd, yawr %f %f\n", yawd, yawr);
         printTimeCounter = 0;
