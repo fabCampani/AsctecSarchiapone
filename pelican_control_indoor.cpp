@@ -60,6 +60,8 @@ extern int landing;
 
 #define LANDING 95
 
+#define NPAST 30
+
 //Tipo di funzione
 int Nfunc1;
 int Nfunc2;
@@ -72,6 +74,17 @@ double dzrDeb;
 double edx;
 double edy;
 double edz;
+
+//Predisposizione filtro
+double edxPast[NPAST];
+double edyPast[NPAST];
+double edzPast[NPAST];
+int i;
+
+double edxCurrent;
+double edyCurrent;
+double edzCurrent;
+
 
 //Funzione di normalizzazione(OpenCV) {non utilizzata}
 void normalize1(Mat mat){
@@ -99,13 +112,29 @@ void normalize1(double *vett){
 
 }
 
+void initializeVett(double *vett, int lenght){
+	for (int i = 0; i < lenght; i++)
+	{
+		vett[i] = 0;
+	}
+}
+
+double media(double *vett, ind lenght){
+	double mean = 0;
+	for (int i = 0; i < length; i++)
+	{
+		mean += vett[i];
+	}
+	return(mean / lenght);
+}
+
 // debug function -- the parameters can be printed to check if they were correctly loaded.
 void
 Module0::printParams() {
 
 }
 
-//Carciamento parametri (da file params2.txt se esiste)
+//Caricamento parametri (da file params2.txt se esiste)
 void
 Module0::loadParams() {
 	kpvx = -850;
@@ -119,9 +148,9 @@ Module0::loadParams() {
 	kdvz = 0.0;
 	kdyaw = 0.0;
 	
-	kivx = -16;
-	kivy = 14;
-	kivz = -10;
+	kivx = -20;
+	kivy = 16;
+	kivz = -100;
 	kiyaw = 0;	
 	
 	ke1 = -1;
@@ -168,6 +197,12 @@ Module0::loadParams() {
 	edx = 0;
 	edy = 0;
 	edz = 0;
+
+	initializeVett(edxPast, NPAST);
+	initializeVett(edyPast, NPAST);
+	initializeVett(edzPast, NPAST);
+	i = 0;
+
 	//Carcamento parametri da file
 	ifstream fs("params2.txt");	
 	if (fs.is_open()){
@@ -428,6 +463,7 @@ Module0::DoYourDuty (int wc)
 		dyd = R[3] * SumNED[0] + R[4] * SumNED[1] + R[5] * SumNED[2];
 		dzd = R[6] * SumNED[0] + R[7] * SumNED[1] + R[8] * SumNED[2];
 		*/
+
 		/*ATTENZIONE!*/
 		//Setup Controllore PID
 		dxd = 0;
@@ -443,6 +479,17 @@ Module0::DoYourDuty (int wc)
 		edx = dxd - dxr;
 		edy = dyd - dyr;
 		edz = dzd - dzr;
+
+		/*PROVA*/
+		edxPast[i] = edx;
+		edyPast[i] = edy;
+		edzPast[i] = edz;
+		i = (i + 1) % NPAST;
+
+		edxCurrent = media(edxPast, NPAST);
+		edyCurrent = media(edyPast, NPAST);
+		edzCurrent = media(edzPast, NPAST);
+		/*FINE PROVA*/
 
 		cumulx = cumulx + edx*mtime;
 		cumuly = cumuly + edy*mtime;
@@ -461,7 +508,7 @@ Module0::DoYourDuty (int wc)
 		
 		ur = rollOffset + kpvy*(edy) + kivy*(cumuly)+ kdvy*(dedy); // roll command
 		
-		//Procedura di ATTERRAGGIO
+		//Procedura di ATTERRAGGIO (non ancora testata)
 
 		if (landing == 1)
 		{
