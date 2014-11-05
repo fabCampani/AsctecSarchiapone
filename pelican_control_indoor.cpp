@@ -137,9 +137,9 @@ Module0::printParams() {
 //Caricamento parametri (da file params2.txt se esiste)
 void
 Module0::loadParams() {
-	kpvx = -850;
-	kpvy = 820;
-	kpvz = -600.0;
+	kpvx = -760;
+	kpvy = 760;
+	kpvz = -550.0;
 
 	kpyaw = 1500.0;
 
@@ -148,13 +148,14 @@ Module0::loadParams() {
 	kdvz = 0.0;
 	kdyaw = 0.0;
 	
-	kivx = -20;
-	kivy = 16;
-	kivz = -100;
+	kivx = -5;
+	kivy = 5;
+	kivz = -10;
 	kiyaw = 0;	
 	
-	ke1 = -1;
-	ke2 = -1;
+	ke1 = -38;
+	ke2 = -38;
+
 	thre1 = 100;
 	thre2 = 100;
 	//Costante per componente tangente:
@@ -167,14 +168,14 @@ Module0::loadParams() {
 	ground = 1.45; // m
 
 	//gravity compensation
-	gravity = 2540;	//da tarare
+	gravity = 2555;	//da tarare
 
 
 	cumulx = 0,  // reset
 	cumuly = 0,
 	cumulz = 0,
 	cumulyaw = 0;
-	pitchOffset = 165;  // pitch offset, manually estimated
+	pitchOffset = 170;  // pitch offset, manually estimated
 	rollOffset = 0;  // roll offset
 	yawOffset = 0;
 
@@ -212,6 +213,7 @@ Module0::loadParams() {
 		//3rd line: kdx kdy kdz
 		//4th line: ktg speed
 		//5th line: gravitycompensation pitchOffset
+		//6th line: ke1 ke2 (always negative)
 		fs >> kpvx;
 		fs >> kpvy;
 		fs >> kpvz;
@@ -228,6 +230,9 @@ Module0::loadParams() {
 		fs >> veld;
 		fs >> gravity;
 		fs >> pitchOffset;
+
+		fs >> ke1;
+		fs >> ke2;
 	}
 }
 
@@ -256,9 +261,9 @@ Module0::initializeDataSaving() {
 		fs2 << "dxd\t";
 		fs2 << "dyd\t";
 		fs2 << "dzd\t";
-		fs2 << "dxNED\t";
-		fs2 << "dyNED\t";
-		fs2 << "dzNED\t";
+		//fs2 << "dxNED\t";
+		//fs2 << "dyNED\t";
+		//fs2 << "dzNED\t";
 		fs2 << "pitch\t";
 		fs2 << "roll\t";
 		fs2 << "yaw\t";
@@ -278,6 +283,7 @@ Module0::initializeDataSaving() {
 		fs2 << "ktg\t";
 		fs2 << "veld\t";
 		fs2 << "pitchoff\t";
+		fs2 << "ke1\tke2\t";
 		fs2 << "gravity\n";
 
 		
@@ -601,7 +607,7 @@ Module0::DoYourDuty (int wc)
     fs2 << xr << "\t" << yr << "\t" << zr << "\t";
     fs2 << dxr << "\t" << dyr << "\t" << dzr<<"\t";
 	fs2 << dxd << "\t" << dyd << "\t" << dzd << "\t";
-	fs2 << dxrDeb << "\t" << dyrDeb << "\t" << dzrDeb << "\t";
+	//fs2 << dxrDeb << "\t" << dyrDeb << "\t" << dzrDeb << "\t";
     fs2 << theta << "\t" << phi << "\t" << yawr << "\t";
 	fs2 << kpvx << "\t";
 	fs2 << kpvy << "\t";
@@ -618,6 +624,7 @@ Module0::DoYourDuty (int wc)
 	fs2 << ktg << "\t";
 	fs2 << veld << "\t";
 	fs2 << pitchOffset << "\t";
+	fs2 << ke1 << "\t" << ke2 << "\t";
 	fs2 << gravity << "\t";
     fs2 <<  "\n";
 
