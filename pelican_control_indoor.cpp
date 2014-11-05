@@ -119,9 +119,9 @@ void initializeVett(double *vett, int lenght){
 	}
 }
 
-double media(double *vett, ind lenght){
+double media(double *vett, int lenght){
 	double mean = 0;
-	for (int i = 0; i < length; i++)
+	for (int i = 0; i < lenght; i++)
 	{
 		mean += vett[i];
 	}
@@ -191,7 +191,7 @@ Module0::loadParams() {
 	y_target = 0;
 
 	//funzioni
-	Nfunc1 = PLANE2;
+	Nfunc1 = CIRCLE;
 	Nfunc2 = PLANE;
 
 	edx = 0;
@@ -458,17 +458,19 @@ Module0::DoYourDuty (int wc)
 		SumNED[1] *= veld;
 		SumNED[2] *= veld;
 
-		/*
+		
 		dxd = R[0] * SumNED[0] + R[1] * SumNED[1] + R[2] * SumNED[2];
 		dyd = R[3] * SumNED[0] + R[4] * SumNED[1] + R[5] * SumNED[2];
 		dzd = R[6] * SumNED[0] + R[7] * SumNED[1] + R[8] * SumNED[2];
-		*/
+		
 
 		/*ATTENZIONE!*/
 		//Setup Controllore PID
+		/*
 		dxd = 0;
 		dyd = 0;
 		dzd = 0;
+		*/
 
 		if (landing == 1){
 			dxd = 0;
