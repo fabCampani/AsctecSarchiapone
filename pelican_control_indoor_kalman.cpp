@@ -589,6 +589,8 @@ Module0::DoYourDuty (int wc)
 		normalize1(grad1);
 		normalize1(grad2);
 
+		normalize1(Tang);
+
 		//vettore risultante
 		double SumNED[] = {
 			e1*grad1[0] + e2*grad2[0] + ktg*Tang[0],
