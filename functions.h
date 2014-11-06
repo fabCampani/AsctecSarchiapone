@@ -4,9 +4,12 @@
 #define PLANE 1
 #define PLANE2 2
 
+double radius = 0.4;
+double center_x = -2.5;
+double center_y = -0.2;
+
 double functionCircle(double x, double y, double z)
 {
-	double radius = 0.5; double center_x = -2.5; double center_y = 0;
 	return (pow(x - center_x, 2) + pow(y - center_y, 2) - pow(radius, 2));
 }
 
@@ -18,7 +21,6 @@ double functionPlane(double x, double y, double z)
 
 
 void fgradCircle(double *res, double x, double y, double z){
-	double radius = 0.5; double center_x = -2.5; double center_y = 0;
 	res[0] = 2 * (x - center_x);
 	res[1] = 2 * (y - center_y);
 	res[2] = 0;

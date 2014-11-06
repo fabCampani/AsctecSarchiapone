@@ -270,9 +270,9 @@ Module0::loadParams() {
 	edy = 0;
 	edz = 0;
 
-	initializeVett(edxPast, NPAST);
-	initializeVett(edyPast, NPAST);
-	initializeVett(edzPast, NPAST);
+	initializeVett(dxPast, NPAST);
+	initializeVett(dyPast, NPAST);
+	initializeVett(dzPast, NPAST);
 	i = 0;
 
 	//Carcamento parametri da file
@@ -332,15 +332,12 @@ Module0::initializeDataSaving() {
         fs2 << "dx\t";
 		fs2 << "dy\t";
 		fs2 << "dz\t";
-		fs2 << "dxd\t";
-		fs2 << "dyd\t";
-		fs2 << "dzd\t";
 		fs2 << "dxk\t";
 		fs2 << "dyk\t";
 		fs2 << "dzk\t";
-		fs2 << "dxMedia\t";
-		fs2 << "dyMedia\t";
-		fs2 << "dzMedia\t";
+		fs2 << "dxd\t";
+		fs2 << "dyd\t";
+		fs2 << "dzd\t";
 		//fs2 << "dxNED\t";
 		//fs2 << "dyNED\t";
 		//fs2 << "dzNED\t";
@@ -415,6 +412,7 @@ Module0::DoYourDuty (int wc)
 	{
 
 	static double *R = new double[9];
+	double accx, accy, accz;
 
     printTimeCounter++; 
            
@@ -480,9 +478,9 @@ Module0::DoYourDuty (int wc)
 
 
 	///Kalman prediction
-	ax = acc_x*9.81 / 10000;
-	ay = acc_y*9.81 / 10000;
-	az = acc_z*9.81 / 10000;
+	double ax = acc_x*9.81 / 10000;
+	double ay = acc_y*9.81 / 10000;
+	double az = acc_z*9.81 / 10000;
 
 	//Moltiplichiamo per la trasposta di R per portarlo nel frame NED
 	accx = R[0] * ax + R[3] * ay + R[6] * az;
@@ -552,12 +550,19 @@ Module0::DoYourDuty (int wc)
     if ((initialize==1)&(ended==0)){
 		
 		/***CONTROLLO INIZIA QUI****/
-		
+		/*
 		e1 = array_function[Nfunc1](xr, yr, zr);
 		e2 = array_function[Nfunc2](xr, yr, zr);
-
+		
 		array_fgrad[Nfunc1](grad1, xr, yr, zr);
 		array_fgrad[Nfunc2](grad2, xr, yr, zr);
+		*/
+
+		e1 = array_function[Nfunc1](xk, yk, zk);
+		e2 = array_function[Nfunc2](xk, yk, zk);
+
+		array_fgrad[Nfunc1](grad1, xk, yk, zk);
+		array_fgrad[Nfunc2](grad2, xk, yk, zk);
 
 		//Soglia errore
 		if (e1 > thre1){
@@ -604,41 +609,35 @@ Module0::DoYourDuty (int wc)
 		SumNED[1] *= veld;
 		SumNED[2] *= veld;
 
-		
+		//NED -> drone
 		dxd = R[0] * SumNED[0] + R[1] * SumNED[1] + R[2] * SumNED[2];
 		dyd = R[3] * SumNED[0] + R[4] * SumNED[1] + R[5] * SumNED[2];
 		dzd = R[6] * SumNED[0] + R[7] * SumNED[1] + R[8] * SumNED[2];
 		
 
 		/*ATTENZIONE!*/
-		//Setup Controllore PID
-		/*
-		dxd = 0;
+		//Setup Controllore PID		
+		dxd = veld;
 		dyd = 0;
 		dzd = 0;
-		*/
+		
 
 		if (landing == 1){
 			dxd = 0;
 			dyd = 0;
 			dzd = 0;
 		}
-
+		
 		edx = dxd - dxr;
 		edy = dyd - dyr;
 		edz = dzd - dzr;
-
-		/*PROVA*/
-		dxPast[i] = dxr;
-		dyPast[i] = dyr;
-		dzPast[i] = dzr;
-		i = (i + 1) % NPAST;
-
-		dxCurrent = media(dxPast, NPAST);
-		dyCurrent = media(dyPast, NPAST);
-		dzCurrent = media(dzPast, NPAST);
-		/*FINE PROVA*/
-
+		
+		//Kalman
+		/*
+		edx = dxd - dxk;
+		edy = dyd - dyk;
+		edz = dzd - dzk;
+		*/
 		cumulx = cumulx + edx*mtime;
 		cumuly = cumuly + edy*mtime;
 		cumulz = cumulz + edz*mtime;
@@ -748,7 +747,6 @@ Module0::DoYourDuty (int wc)
 	fs2 << xk << "\t" << yk << "\t" << zk << "\t";
     fs2 << dxr << "\t" << dyr << "\t" << dzr<<"\t";
 	fs2 << dxk << "\t" << dyk << "\t" << dzk << "\t";
-	fs2 << dxCurrent << "\t" << dyCurrent << "\t" << dzCurrent << "\t";
 	fs2 << dxd << "\t" << dyd << "\t" << dzd << "\t";
 	//fs2 << dxrDeb << "\t" << dyrDeb << "\t" << dzrDeb << "\t";
     fs2 << theta << "\t" << phi << "\t" << yawr << "\t";
