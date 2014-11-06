@@ -148,18 +148,18 @@ Module0::loadParams() {
 	kdvz = 0.0;
 	kdyaw = 0.0;
 	
-	kivx = -5;
-	kivy = 5;
+	kivx = 0;
+	kivy = 0;
 	kivz = -10;
 	kiyaw = 0;	
 	
-	ke1 = -38;
-	ke2 = -38;
+	ke1 = -33;
+	ke2 = -33;
 
 	thre1 = 100;
 	thre2 = 100;
 	//Costante per componente tangente:
-	ktg = 0.2;
+	ktg = 0.5;
 
 	//velocità di marcia
 	veld = 0.2;   // m/s
