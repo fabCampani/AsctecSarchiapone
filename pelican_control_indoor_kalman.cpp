@@ -636,7 +636,7 @@ Module0::DoYourDuty (int wc)
 		//Prodotto vettore
 		double Tang[]
 		{
-			- grad1[2] * grad2[1] + grad1[1] * grad2[2],
+			-grad1[2] * grad2[1] + grad1[1] * grad2[2],
 			grad1[2] * grad2[0] - grad1[0] * grad2[2],
 			-grad1[1] * grad2[0] + grad1[0] * grad2[1]
 		};
