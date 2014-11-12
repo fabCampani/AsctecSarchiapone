@@ -199,6 +199,51 @@ double media(double *vett, int lenght){
 	return(mean / lenght);
 }
 
+void updateMatrices(){
+	float A_mat[9][9] = { { 1, dt, -(dt*dt) / 2, 0, 0, 0, 0, 0, 0 },
+	{ 0, 1, -dt, 0, 0, 0, 0, 0, 0 },
+	{ 0, 0, 1, 0, 0, 0, 0, 0, 0 },
+	{ 0, 0, 0, 1, dt, -(dt*dt) / 2, 0, 0, 0 },
+	{ 0, 0, 0, 0, 1, -dt, 0, 0, 0 },
+	{ 0, 0, 0, 0, 0, 1, 0, 0, 0 },
+	{ 0, 0, 0, 0, 0, 0, 1, dt, -(dt*dt) / 2 },
+	{ 0, 0, 0, 0, 0, 0, 0, 1, -dt },
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 1 } };
+
+	float Q_mat[9][9] = { { n_accx*(dt*dt*dt*dt) / 4, n_accx*(dt*dt*dt) / 2, n_accx*(dt*dt) / 2, 0, 0, 0, 0, 0, 0 },
+	{ n_accx*(dt*dt*dt) / 2, n_accx*(dt*dt), n_accx*dt, 0, 0, 0, 0, 0, 0 },
+	{ n_accx*(dt*dt) / 2, n_accx*dt, n_accx, 0, 0, 0, 0, 0, 0 },
+	{ 0, 0, 0, n_accy*(dt*dt*dt*dt) / 4, n_accy*(dt*dt*dt) / 2, n_accy*(dt*dt) / 2, 0, 0, 0 },
+	{ 0, 0, 0, n_accy*(dt*dt*dt) / 2, n_accy*(dt*dt), n_accy*dt, 0, 0, 0 },
+	{ 0, 0, 0, n_accy*(dt*dt) / 2, n_accy*dt, n_accy, 0, 0, 0 },
+	{ 0, 0, 0, 0, 0, 0, n_accz*(dt*dt*dt*dt) / 4, n_accz*(dt*dt*dt) / 2, n_accz*(dt*dt) / 2 },
+	{ 0, 0, 0, 0, 0, 0, n_accz*(dt*dt*dt) / 2, n_accz*(dt*dt), n_accz*dt },
+	{ 0, 0, 0, 0, 0, 0, n_accz*(dt*dt) / 2, n_accz*dt, n_accz } };
+
+
+	float B_mat[9][3] = { { (dt*dt) / 2, 0, 0 },
+	{ dt, 0, 0 },
+	{ 1, 0, 0 },
+	{ 0, (dt*dt) / 2, 0 },
+	{ 0, dt, 0 },
+	{ 0, 1, 0 },
+	{ 0, 0, (dt*dt) / 2 },
+	{ 0, 0, dt },
+	{ 0, 0, 1 } };
+
+	cv::Mat Aa1(9, 9, CV_32F, A_mat);
+	cv::Mat Aq1(9, 9, CV_32F, Q_mat);
+	cv::Mat Ab1(9, 3, CV_32F, B_mat);
+	Aa1.copyTo(Aa);
+	Aq1.copyTo(Aq);
+	Ab1.copyTo(Ab);
+	/*
+	Aa = Aa1;
+	Aq = Aq1;
+	Ab = Ab1;
+	*/
+}
+
 // debug function -- the parameters can be printed to check if they were correctly loaded.
 void
 Module0::printParams() {
@@ -329,9 +374,9 @@ Module0::initializeDataSaving() {
 		fs2 << "xk\t";
 		fs2 << "yk\t";
 		fs2 << "zk\t";
-        fs2 << "dx\t";
-		fs2 << "dy\t";
-		fs2 << "dz\t";
+        fs2 << "dxr\t";
+		fs2 << "dyr\t";
+		fs2 << "dzr\t";
 		fs2 << "dxk\t";
 		fs2 << "dyk\t";
 		fs2 << "dzk\t";
@@ -465,6 +510,8 @@ Module0::DoYourDuty (int wc)
 	gettimeofday(&starttime2, NULL);
 	dt = mtime;
 
+	updateMatrices();
+
 	//Rotation matrix NED -> drone
 
 	R[0] = cos(theta) * cos(yawr);
@@ -551,20 +598,23 @@ Module0::DoYourDuty (int wc)
     if ((initialize==1)&(ended==0)){
 		
 		/***CONTROLLO INIZIA QUI****/
+		//NO KALMAN
 		
 		e1 = array_function[Nfunc1](xr, yr, zr);
 		e2 = array_function[Nfunc2](xr, yr, zr);
 		
 		array_fgrad[Nfunc1](grad1, xr, yr, zr);
 		array_fgrad[Nfunc2](grad2, xr, yr, zr);
-		
+
 		/*
+		//KALMAN
 		e1 = array_function[Nfunc1](xk, yk, zk);
 		e2 = array_function[Nfunc2](xk, yk, zk);
 
 		array_fgrad[Nfunc1](grad1, xk, yk, zk);
 		array_fgrad[Nfunc2](grad2, xk, yk, zk);
 		*/
+
 		//Soglia errore
 		if (e1 > thre1){
 			e1 = thre1;
@@ -618,10 +668,11 @@ Module0::DoYourDuty (int wc)
 
 		/*ATTENZIONE!*/
 		//Setup Controllore PID	(cancellare)	
+		/*
 		dxd = veld;
 		dyd = 0;
 		dzd = 0;
-
+		*/
 
 		if (landing == 1){
 			dxd = 0;
@@ -634,8 +685,8 @@ Module0::DoYourDuty (int wc)
 		edy = dyd - dyr;
 		edz = dzd - dzr;
 		*/
-		//Kalman
-		
+
+		//Kalman		
 		edx = dxd - dxk;
 		edy = dyd - dyk;
 		edz = dzd - dzk;
@@ -683,7 +734,7 @@ Module0::DoYourDuty (int wc)
 			ut = 1700;
 		}
 		
-		//Controllo Yaw
+		//Controllo Yaw (non tarato)
 		yawd = atan2(y_target, x_target);
 		eyaw = sin(yawd - yawr);
 		uy = kpyaw*(eyaw);
