@@ -414,8 +414,8 @@ Module0::DoYourDuty (int wc)
 	static double *R = new double[9];
 	double accx, accy, accz;
 
-    printTimeCounter++; 
-           
+    printTimeCounter++;
+
     theta = 0.001 * (double) angle_pitch *M_PI/180.0;  // Radiants
     phi = 0.001 * (double) angle_roll *M_PI/180.0;    // Radiants
 	psi = 0.001 * (double)angle_yaw *M_PI / 180.0;  // Radiants
@@ -463,6 +463,7 @@ Module0::DoYourDuty (int wc)
 	mtime = ((secc)+(msec / 1000000.0)); //time in sec
 	accum_time = accum_time + mtime;
 	gettimeofday(&starttime2, NULL);
+	dt = mtime;
 
 	//Rotation matrix NED -> drone
 
@@ -550,20 +551,20 @@ Module0::DoYourDuty (int wc)
     if ((initialize==1)&(ended==0)){
 		
 		/***CONTROLLO INIZIA QUI****/
-		/*
+		
 		e1 = array_function[Nfunc1](xr, yr, zr);
 		e2 = array_function[Nfunc2](xr, yr, zr);
 		
 		array_fgrad[Nfunc1](grad1, xr, yr, zr);
 		array_fgrad[Nfunc2](grad2, xr, yr, zr);
-		*/
-
+		
+		/*
 		e1 = array_function[Nfunc1](xk, yk, zk);
 		e2 = array_function[Nfunc2](xk, yk, zk);
 
 		array_fgrad[Nfunc1](grad1, xk, yk, zk);
 		array_fgrad[Nfunc2](grad2, xk, yk, zk);
-
+		*/
 		//Soglia errore
 		if (e1 > thre1){
 			e1 = thre1;
@@ -616,31 +617,32 @@ Module0::DoYourDuty (int wc)
 		
 
 		/*ATTENZIONE!*/
-		//Setup Controllore PID		
+		//Setup Controllore PID	(cancellare)	
 		dxd = veld;
 		dyd = 0;
 		dzd = 0;
-		
+
 
 		if (landing == 1){
 			dxd = 0;
 			dyd = 0;
 			dzd = 0;
 		}
-		
+		//Calcolo errore: (velocità desiderata - misurata)
+		/*
 		edx = dxd - dxr;
 		edy = dyd - dyr;
 		edz = dzd - dzr;
-		
+		*/
 		//Kalman
-		/*
+		
 		edx = dxd - dxk;
 		edy = dyd - dyk;
 		edz = dzd - dzk;
-		*/
-		cumulx = cumulx + edx*mtime;
-		cumuly = cumuly + edy*mtime;
-		cumulz = cumulz + edz*mtime;
+		
+		cumulx = cumulx + edx * mtime;
+		cumuly = cumuly + edy * mtime;
+		cumulz = cumulz + edz * mtime;
 		
 		//Derivativo:
 		dedx = (edx - edxback) / mtime;
