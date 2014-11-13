@@ -138,9 +138,9 @@ int Nfunc1;
 int Nfunc2;
 
 //Velocità frame NED (debug)
-double dxrDeb;
-double dyrDeb;
-double dzrDeb;
+double dxC;
+double dyC;
+double dzC;
 //Errori
 double edx;
 double edy;
@@ -441,9 +441,9 @@ Module0::Init()
 	mtime=0; 
 	accum_time=0;
 
-	dxrDeb = 0;
-	dyrDeb = 0;
-	dzrDeb = 0;
+	dxC = 0;
+	dyC = 0;
+	dzC = 0;
 
 	printstep = 70; // limits the visualization of the status on the terminal
 	printTimeCounter = 0;
@@ -493,9 +493,9 @@ Module0::DoYourDuty (int wc)
 			dyawr = *((double*)((char*)(rxMsg->ReadData()) + 7 * sizeof(double)));
 
 
-			dxrDeb = dxr;
-			dyrDeb = dyr;
-			dzrDeb = dzr;
+			dxC = dxr;
+			dyC = dyr;
+			dzC = dzr;
 			
 		}
 	}
@@ -543,13 +543,13 @@ Module0::DoYourDuty (int wc)
 	Ap = Aa*Ap*(Aa.t()) + Aq;     // prediction ok
 
 	Ay.at<float>(0, 0) = xr;
-	Ay.at<float>(1, 0) = dxr;
+	Ay.at<float>(1, 0) = dxC;
 	Ay.at<float>(2, 0) = 0;
 	Ay.at<float>(3, 0) = yr;
-	Ay.at<float>(4, 0) = dyr;
+	Ay.at<float>(4, 0) = dyC;
 	Ay.at<float>(5, 0) = 0;
 	Ay.at<float>(6, 0) = zr;
-	Ay.at<float>(7, 0) = dzr;
+	Ay.at<float>(7, 0) = dzC;
 	Ay.at<float>(8, 0) = 0;
 
 	//Kalman Update
@@ -579,9 +579,9 @@ Module0::DoYourDuty (int wc)
 	dzk = dzr1;
 
 	//No Kalman NED -> drone
-	dxr1 = R[0] * dxr + R[1] * dyr + R[2] * dzr;
-	dyr1 = R[3] * dxr + R[4] * dyr + R[5] * dzr;
-	dzr1 = R[6] * dxr + R[7] * dyr + R[8] * dzr;
+	dxr1 = R[0] * dxC + R[1] * dyC + R[2] * dzC;
+	dyr1 = R[3] * dxC + R[4] * dyC + R[5] * dzC;
+	dzr1 = R[6] * dxC + R[7] * dyC + R[8] * dzC;
 
 	dxr = dxr1;
 	dyr = dyr1;
@@ -801,7 +801,7 @@ Module0::DoYourDuty (int wc)
     fs2 << dxr << "\t" << dyr << "\t" << dzr<<"\t";
 	fs2 << dxk << "\t" << dyk << "\t" << dzk << "\t";
 	fs2 << dxd << "\t" << dyd << "\t" << dzd << "\t";
-	//fs2 << dxrDeb << "\t" << dyrDeb << "\t" << dzrDeb << "\t";
+	//fs2 << dxC << "\t" << dyC << "\t" << dzC << "\t";
     fs2 << theta << "\t" << phi << "\t" << yawr << "\t";
 	fs2 << kpvx << "\t";
 	fs2 << kpvy << "\t";
@@ -838,7 +838,7 @@ Module0::DoYourDuty (int wc)
         //printf("COMMANDS: command pitch, roll, thrust, yaw: %d %d %d %d \n", CTRL_pitch, CTRL_roll, CTRL_thrust, CTRL_yaw);
 		//printf("COMMANDS: edx, edy, edz: %f %f %f \n", edx, edy, edz);
         //printf("VELOCITY   : dx, dy, dz: %f %f %f \n", dxr, dyr, dzr);
-		//printf("VELOCITYNED: dx, dy, dz: %f %f %f \n", dxrDeb, dyrDeb, dzrDeb);
+		//printf("VELOCITYNED: dx, dy, dz: %f %f %f \n", dxC, dyC, dzC);
 		//printf("ANGLES   : pitch, roll, yaw: %f %f %f \n", theta, phi, yawr);
 		//printf("Rotation:\n %f\t %f\t %f\n %f\t %f\t %f\n%f\t %f\t %f\n", R[0], R[1], R[2], R[3], R[4], R[5], R[6], R[7], R[8]);
 		//printf("DESIDERED VELOCITY: dx, dy, dz: %f %f %f \n", dxd, dyd, dzd);
