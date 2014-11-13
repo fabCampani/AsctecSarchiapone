@@ -4,9 +4,9 @@
 #define PLANE 1
 #define PLANE2 2
 
-double radius = 0.4;
+double radius = 0.01;
 double center_x = -2.5;
-double center_y = -0.2;
+double center_y = -0.0;
 
 double functionCircle(double x, double y, double z)
 {

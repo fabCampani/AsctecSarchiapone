@@ -237,11 +237,6 @@ void updateMatrices(){
 	Aa1.copyTo(Aa);
 	Aq1.copyTo(Aq);
 	Ab1.copyTo(Ab);
-	/*
-	Aa = Aa1;
-	Aq = Aq1;
-	Ab = Ab1;
-	*/
 }
 
 // debug function -- the parameters can be printed to check if they were correctly loaded.
@@ -586,7 +581,6 @@ Module0::DoYourDuty (int wc)
 	dxr = dxr1;
 	dyr = dyr1;
 	dzr = dzr1;
-
    
     if ((initialize==0)|(ended==1))
     {
@@ -598,8 +592,8 @@ Module0::DoYourDuty (int wc)
     if ((initialize==1)&(ended==0)){
 		
 		/***CONTROLLO INIZIA QUI****/
-		//NO KALMAN
 		
+		//NO KALMAN		
 		e1 = array_function[Nfunc1](xr, yr, zr);
 		e2 = array_function[Nfunc2](xr, yr, zr);
 		
@@ -679,6 +673,7 @@ Module0::DoYourDuty (int wc)
 			dyd = 0;
 			dzd = 0;
 		}
+
 		//Calcolo errore: (velocità desiderata - misurata)
 		/*
 		edx = dxd - dxr;
@@ -858,4 +853,3 @@ Module0::Close()
  	printf(" executed %d times ",message_rec);
     fflush(stdout);
 }
-
