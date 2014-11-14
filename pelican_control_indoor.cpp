@@ -75,6 +75,18 @@ double edx;
 double edy;
 double edz;
 
+
+double dxr3;
+double dxr4;
+double dxr5;
+double dyr3;
+double dyr4;
+double dyr5;
+double dzr3;
+double dzr4;
+double dzr5;
+
+
 //valori passati per derivata
 double xPast[5];
 double yPast[5];
@@ -396,18 +408,20 @@ Module0::DoYourDuty (int wc)
 			yPast[i] = yr;
 			zPast[i] = zr;
 
+			tempi[i] = mtime;
 
-			dxr3 = (xPast[i] - xPast[(5 + i - 2) % 5]) / (2 * mtime);
-			dxr4 = (xPast[(5 + i - 3) % 5] + 3 * xPast[(5 + i - 1)] + 6 * xPast[5 + i - 2] + xPast[i])/(6*mtime);
-			dxr5 = (xPast[(5 + i - 4) % 5] - 8 * xPast[(5 + i - 3) % 5] - 8 * xPast[(5 + i - 1)] + xPast[i]) / (12 * mtime);
 
-			dyr3 = (yPast[i] - yPast[(5 + i - 2) % 5]) / (2 * mtime);
-			dyr4 = (yPast[(5 + i - 3) % 5] + 3 * yPast[(5 + i - 1)] + 6 * yPast[5 + i - 2] + yPast[i]) / (6 * mtime);
-			dyr5 = (yPast[(5 + i - 4) % 5] - 8 * yPast[(5 + i - 3) % 5] - 8 * yPast[(5 + i - 1)] + yPast[i]) / (12 * mtime);
+			dxr3 = (xPast[i] - xPast[(5 + i - 2) % 5]) / (tempi[i] + tempi[(5+i-1)%5])         //(2 * mtime); // 
+			dxr4 = (xPast[(5 + i - 3) % 5] + 3 * xPast[(5 + i - 1)] + 6 * xPast[5 + i - 2] + xPast[i]) / (2*(tempi[i] + tempi[(5 + i - 1) % 5] + tempi[(5+i-2)%5])) 						///(6*mtime);
+			dxr5 = (xPast[(5 + i - 4) % 5] - 8 * xPast[(5 + i - 3) % 5] - 8 * xPast[(5 + i - 1)] + xPast[i]) / (3 * (tempi[i] + tempi[(5 + i - 1) % 5] + tempi[(5 + i - 2) % 5] + tempi[(5 + i - 3) % 5]))																					///(12 * mtime);
 
-			dyr3 = (zPast[i] - zPast[(5 + i - 2) % 5]) / (2 * mtime);
-			dyr4 = (zPast[(5 + i - 3) % 5] + 3 * zPast[(5 + i - 1)] + 6 * zPast[5 + i - 2] + zPast[i]) / (6 * mtime);
-			dyr5 = (zPast[(5 + i - 4) % 5] - 8 * zPast[(5 + i - 3) % 5] - 8 * zPast[(5 + i - 1)] + zPast[i]) / (12 * mtime);
+			dyr3 = (yPast[i] - yPast[(5 + i - 2) % 5]) / (tempi[i] + tempi[(5 + i - 1) % 5])         //(2 * mtime); // 
+			dyr4 = (yPast[(5 + i - 3) % 5] + 3 * yPast[(5 + i - 1)] + 6 * yPast[5 + i - 2] + yPast[i]) / (2 * (tempi[i] + tempi[(5 + i - 1) % 5] + tempi[(5 + i - 2) % 5])) 						///(6*mtime);
+			dyr5 = (yPast[(5 + i - 4) % 5] - 8 * yPast[(5 + i - 3) % 5] - 8 * yPast[(5 + i - 1)] + yPast[i]) / (3 * (tempi[i] + tempi[(5 + i - 1) % 5] + tempi[(5 + i - 2) % 5] + tempi[(5 + i - 3) % 5]))																					///(12 * mtime);
+
+			dzr3 = (zPast[i] - zPast[(5 + i - 2) % 5]) / (tempi[i] + tempi[(5 + i - 1) % 5])         //(2 * mtime); // 
+			dzr4 = (zPast[(5 + i - 3) % 5] + 3 * zPast[(5 + i - 1)] + 6 * zPast[5 + i - 2] + zPast[i]) / (2 * (tempi[i] + tempi[(5 + i - 1) % 5] + tempi[(5 + i - 2) % 5])) 						///(6*mtime);
+			dzr5 = (zPast[(5 + i - 4) % 5] - 8 * zPast[(5 + i - 3) % 5] - 8 * zPast[(5 + i - 1)] + zPast[i]) / (3 * (tempi[i] + tempi[(5 + i - 1) % 5] + tempi[(5 + i - 2) % 5] + tempi[(5 + i - 3) % 5]))																					///(12 * mtime);
 
 
 
