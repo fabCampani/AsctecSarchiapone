@@ -1,31 +1,27 @@
-#include <stdio.h>
+ï»¿#include <stdio.h>
 #include "const.h"
 
 
 class Module0 : public ETExpert
 {
-	private:
-            int message_rec;
-	//posizione e velocità attuale
+private:
+	int message_rec;
+	//posizione e velocitï¿½ attuale
 	double xr, yr, zr, yawr;
 	double dxr, dyr, dzr, dyawr;
-	//velocità desiderata e yaw desiderata
+	//velocitï¿½ desiderata e yaw desiderata
 	double dxd, dyd, dzd, yawd;
-	//parametri regolatori : k_costante,(p,i,d)_Proporzionale integrativa o derivativa, vx_ velocità lungo x
-	double kpx, kpy, kpz, kpyaw;
-	double kdx, kdy, kdz, kdyaw;
-	double kix, kiy, kiz, kiyaw;
-
-	//Goals in posizione
-	double xg, yg, zg;
-	double xp, yp, zp;
+	//parametri regolatori : k_costante,(p,i,d)_Proporzionale integrativa o derivativa, vx_ velocitï¿½ lungo x
+	double kpvx, kpvy, kpvz, kpyaw;
+	double kdvx, kdvy, kdvz, kdyaw;
+	double kivx, kivy, kivz, kiyaw;
 
 	double thrp, thrr;		//soglie angoli
 	//altri parametri
 	double ke1, ke2;		//Guadagno sull'errore
 	double thre1, thre2;	//soglie errori
 	double ktg;			//costante componente tangenziale
-	double dist;			//velocità di riferimento (x,y,z)
+	double veld;			//velocitï¿½ di riferimento (x,y,z)
 	//errori
 	double e1, e2, eyaw;
 	//gradienti
@@ -35,12 +31,12 @@ class Module0 : public ETExpert
 	//parte integrale
 	double cumulx, cumuly, cumulz, cumulyaw;
 	//parte derivativa
-	double exback, eyback, ezback;
-	double dex, dey, dez;
+	double edxback, edyback, edzback;
+	double dedx, dedy, dedz;
 
 	//Offset
 	double pitchOffset, rollOffset, yawOffset;
-		  
+
 	//gravity compensation
 	double gravity;
 
@@ -52,31 +48,31 @@ class Module0 : public ETExpert
 
 	double mtime, accum_time;
 	double msec, secc;
+	double dzback;
 
 
 	//Controlli angoli
 	double up, ur, ut, uy;
-		  
+
 	int printstep;
 	int printTimeCounter;
-    int gps_flag;
-    double long_off, lat_off, height_off;
-    double xback, yback, zback, yawback;
-    int limit;
-    int count_ethnos;
-    double lat_cart, long_cart, height_cart;
-  
-		
-		public:  
-        
+	int gps_flag;
+	double long_off, lat_off, height_off;
+	double xback, yback, zback, yawback;
+	int limit;
+	int count_ethnos;
+	double lat_cart, long_cart, height_cart;
 
-	          Module0 (ETDispatch*);
-	  	  ~Module0();
-		  void Init();
-	          void Close();
-		  void DoYourDuty(int wc=0);
-		  void loadParams();
-		  void printParams();
-		  void initializeDataSaving();
-		  double distance();
+
+public:
+
+
+	Module0(ETDispatch*);
+	~Module0();
+	void Init();
+	void Close();
+	void DoYourDuty(int wc = 0);
+	void loadParams();
+	void printParams();
+	void initializeDataSaving();
 };
