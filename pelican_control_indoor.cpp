@@ -75,10 +75,10 @@ double edx;
 double edy;
 double edz;
 
-//Predisposizione filtro
-double edxPast[NPAST];
-double edyPast[NPAST];
-double edzPast[NPAST];
+//valori passati per derivata
+double xPast[5];
+double yPast[5];
+double zPast[5];
 int i;
 
 double edxCurrent;
@@ -199,9 +199,9 @@ Module0::loadParams() {
 	edy = 0;
 	edz = 0;
 
-	initializeVett(edxPast, NPAST);
-	initializeVett(edyPast, NPAST);
-	initializeVett(edzPast, NPAST);
+	initializeVett(xPast, 5);
+	initializeVett(yPast, 5);
+	initializeVett(zPast, 5);
 	i = 0;
 
 	//Carcamento parametri da file
@@ -258,6 +258,14 @@ Module0::initializeDataSaving() {
         fs2 << "dxr\t";
 		fs2 << "dyr\t";
 		fs2 << "dzr\t";
+
+
+		fs2 << "dxr3" << "\t" << "dyr3" << "\t" << "dzr3" << "\t";
+		fs2 << "dxr4" << "\t" << "dyr4" << "\t" << "dzr4" << "\t";
+		fs2 << "dxr5" << "\t" << "dyr5" << "\t" << "dzr5" << "\t";
+
+
+
 		fs2 << "dxd\t";
 		fs2 << "dyd\t";
 		fs2 << "dzd\t";
@@ -378,6 +386,27 @@ Module0::DoYourDuty (int wc)
 			R[2] = -sin(theta);
 			R[5] = sin(phi) * cos(theta);
 			R[8] = cos(phi) * cos(theta);
+
+
+			i = (i + 1) % 5;
+			xPast[i] = xr;
+			yPast[i] = yr;
+			zPast[i] = zr;
+
+
+			dxr3 = (xPast[i] - xPast[(5 + i - 2) % 5]) / (2 * mtime);
+			dxr4 = (xPast[(5 + i - 3) % 5] + 3 * xPast[(5 + i - 1)] + 6 * xPast[5 + i - 2] + xPast[i])/(6*mtime);
+			dxr5 = (xPast[(5 + i - 4) % 5] - 8 * xPast[(5 + i - 3) % 5] - 8 * xPast[(5 + i - 1)] + xPast[i]) / (12 * mtime);
+
+			dyr3 = (yPast[i] - yPast[(5 + i - 2) % 5]) / (2 * mtime);
+			dyr4 = (yPast[(5 + i - 3) % 5] + 3 * yPast[(5 + i - 1)] + 6 * yPast[5 + i - 2] + yPast[i]) / (6 * mtime);
+			dyr5 = (yPast[(5 + i - 4) % 5] - 8 * yPast[(5 + i - 3) % 5] - 8 * yPast[(5 + i - 1)] + yPast[i]) / (12 * mtime);
+
+			dyr3 = (zPast[i] - zPast[(5 + i - 2) % 5]) / (2 * mtime);
+			dyr4 = (zPast[(5 + i - 3) % 5] + 3 * zPast[(5 + i - 1)] + 6 * zPast[5 + i - 2] + zPast[i]) / (6 * mtime);
+			dyr5 = (zPast[(5 + i - 4) % 5] - 8 * zPast[(5 + i - 3) % 5] - 8 * zPast[(5 + i - 1)] + zPast[i]) / (12 * mtime);
+
+
 
 			dxrDeb = dxr;
 			dyrDeb = dyr;
@@ -606,6 +635,12 @@ Module0::DoYourDuty (int wc)
 	fs2 << cumulx << "\t" << cumuly << "\t" << cumulz << "\t";
     fs2 << xr << "\t" << yr << "\t" << zr << "\t";
     fs2 << dxr << "\t" << dyr << "\t" << dzr<<"\t";
+
+	fs2 << dxr3 << "\t" << dyr3 << "\t" << dzr3 << "\t";
+	fs2 << dxr4 << "\t" << dyr4 << "\t" << dzr4 << "\t";
+	fs2 << dxr5 << "\t" << dyr5 << "\t" << dzr5 << "\t";
+
+
 	fs2 << dxd << "\t" << dyd << "\t" << dzd << "\t";
 	//fs2 << dxrDeb << "\t" << dyrDeb << "\t" << dzrDeb << "\t";
     fs2 << theta << "\t" << phi << "\t" << yawr << "\t";
