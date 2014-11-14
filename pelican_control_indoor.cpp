@@ -275,6 +275,9 @@ Module0::initializeDataSaving() {
 		fs2 << "pitch\t";
 		fs2 << "roll\t";
 		fs2 << "yaw\t";
+
+		fs2 << "yawd\t";
+		fs2 << "eyaw\t";
 		//Parameters
 		fs2 << "kpvx\t";
 		fs2 << "kpvy\t";
@@ -480,6 +483,8 @@ Module0::DoYourDuty (int wc)
 		normalize1(grad1);
 		normalize1(grad2);
 
+		normalize1(Tang);
+
 		//vettore risultante
 		double SumNED[] = {
 			e1*grad1[0] + e2*grad2[0] + ktg*Tang[0],
@@ -571,8 +576,8 @@ Module0::DoYourDuty (int wc)
 			ut = 1700;
 		}
 		
-		//Controllo Yaw
-		yawd = atan2(y_target, x_target);
+		//Controllo Yaw (MAI TESTATO)
+		yawd = atan2(y_target - yr, x_target - xr);
 		eyaw = sin(yawd - yawr);
 		uy = kpyaw*(eyaw);
 
@@ -644,6 +649,7 @@ Module0::DoYourDuty (int wc)
 	fs2 << dxd << "\t" << dyd << "\t" << dzd << "\t";
 	//fs2 << dxrDeb << "\t" << dyrDeb << "\t" << dzrDeb << "\t";
     fs2 << theta << "\t" << phi << "\t" << yawr << "\t";
+	fs2 << yawd << "\t" << eyaw << "\t";
 	fs2 << kpvx << "\t";
 	fs2 << kpvy << "\t";
 	fs2 << kpvz << "\t";
