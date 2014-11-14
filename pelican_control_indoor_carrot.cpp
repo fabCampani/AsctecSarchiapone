@@ -147,7 +147,9 @@ double dzC;
 double ex;
 double ey;
 double ez;
-
+//passo soglia
+double step;
+bool prima;
 
 
 
@@ -169,7 +171,7 @@ void normalize1(double *vett){
 
 }
 
-
+/*/
 void updateMatrices(){
 	float A_mat[9][9] = { { 1, dt, -(dt*dt) / 2, 0, 0, 0, 0, 0, 0 },
 	{ 0, 1, -dt, 0, 0, 0, 0, 0, 0 },
@@ -209,6 +211,11 @@ void updateMatrices(){
 	Aq1.copyTo(Aq);
 	Ab1.copyTo(Ab);
 }
+*/
+
+double Module0::distance(){
+	return(sqrt(pow(xr - xp, 2) + pow(yr - yp, 2) + pow(zr - zp, 2)));
+}
 
 // debug function -- the parameters can be printed to check if they were correctly loaded.
 void
@@ -219,6 +226,8 @@ Module0::printParams() {
 //Caricamento parametri (da file params2.txt se esiste)
 void
 Module0::loadParams() {
+	prima = true;
+
 	kpx = -760;
 	kpy = 760;
 	kpz = -550.0;
@@ -245,6 +254,7 @@ Module0::loadParams() {
 
 	//velocità di marcia
 	dist = 0.2;   // m/s
+	step = 0.19;
 
 	//altezza del suolo
 	ground = 1.45; // m
@@ -282,13 +292,13 @@ Module0::loadParams() {
 	ez = 0;
 
 	//Carcamento parametri da file
-	ifstream fs("params2.txt");	
+	ifstream fs("params3.txt");	
 	if (fs.is_open()){
 		//file format:
 		//1st line: kpx kpy kpz
 		//2nd line: kix kiy kiz
 		//3rd line: kdx kdy kdz
-		//4th line: ktg speed
+		//4th line: ktg speed step
 		//5th line: gravitycompensation pitchOffset
 		//6th line: ke1 ke2 (always negative)
 		fs >> kpx;
@@ -305,6 +315,8 @@ Module0::loadParams() {
 
 		fs >> ktg;
 		fs >> dist;
+		fs >> step;
+
 		fs >> gravity;
 		fs >> pitchOffset;
 
@@ -328,13 +340,20 @@ Module0::initializeDataSaving() {
 		fs2 << "ctrlthrust\t";
 		fs2 << "ctrlyaw\t"; 
 		fs2 << "ex" << "\t" << "ey" << "\t" << "ez" << "\t";
+		fs2 << "dex" << "\t" << "dey" << "\t" << "dez" << "\t";
 		fs2 << "cumulx" << "\t" << "cumuly" << "\t" << "cumulz" << "\t";
         fs2 << "x\t";
 		fs2 << "y\t";
 		fs2 << "z\t";
-		fs2 << "xk\t";
-		fs2 << "yk\t";
-		fs2 << "zk\t";
+		fs2 << "xp\t";
+		fs2 << "yp\t";
+		fs2 << "zp\t";
+		fs2 << "xgoal\t";
+		fs2 << "ygoal\t";
+		fs2 << "zgoal\t";
+		//fs2 << "xk\t";
+		//fs2 << "yk\t";
+		//fs2 << "zk\t";
         fs2 << "dxr\t";
 		fs2 << "dyr\t";
 		fs2 << "dzr\t";
@@ -365,6 +384,7 @@ Module0::initializeDataSaving() {
 
 		fs2 << "ktg\t";
 		fs2 << "dist\t";
+		fs2 << "step\t";
 		fs2 << "pitchoff\t";
 		fs2 << "ke1\tke2\t";
 		fs2 << "gravity\n";
@@ -540,9 +560,9 @@ Module0::DoYourDuty (int wc)
 	*/
 
 	//No Kalman NED -> drone
-	dxr1 = R[0] * dxC + R[1] * dyC + R[2] * dzC;
-	dyr1 = R[3] * dxC + R[4] * dyC + R[5] * dzC;
-	dzr1 = R[6] * dxC + R[7] * dyC + R[8] * dzC;
+	double dxr1 = R[0] * dxC + R[1] * dyC + R[2] * dzC;
+	double dyr1 = R[3] * dxC + R[4] * dyC + R[5] * dzC;
+	double dzr1 = R[6] * dxC + R[7] * dyC + R[8] * dzC;
 
 	dxr = dxr1;
 	dyr = dyr1;
@@ -558,110 +578,119 @@ Module0::DoYourDuty (int wc)
     if ((initialize==1)&(ended==0)){
 		
 		/***CONTROLLO INIZIA QUI****/
-		
-		//NO KALMAN		
-		e1 = array_function[Nfunc1](xr, yr, zr);
-		e2 = array_function[Nfunc2](xr, yr, zr);
-		
-		array_fgrad[Nfunc1](grad1, xr, yr, zr);
-		array_fgrad[Nfunc2](grad2, xr, yr, zr);
+		if ((prima)||(distance() >= step)){
+			xp = xr;
+			yp = yr;
+			zp = zr;
+			prima = false;
+			//NO KALMAN
+			e1 = array_function[Nfunc1](xr, yr, zr);
+			e2 = array_function[Nfunc2](xr, yr, zr);
 
-		/*
-		//KALMAN
-		e1 = array_function[Nfunc1](xk, yk, zk);
-		e2 = array_function[Nfunc2](xk, yk, zk);
+			array_fgrad[Nfunc1](grad1, xr, yr, zr);
+			array_fgrad[Nfunc2](grad2, xr, yr, zr);
 
-		array_fgrad[Nfunc1](grad1, xk, yk, zk);
-		array_fgrad[Nfunc2](grad2, xk, yk, zk);
-		*/
+			/*
+			//KALMAN
+			e1 = array_function[Nfunc1](xk, yk, zk);
+			e2 = array_function[Nfunc2](xk, yk, zk);
 
-		//Soglia errore
-		if (e1 > thre1){
-			e1 = thre1;
-		}
-		else if (e1 < -thre1){
-			e1 = -thre1;
-		}
-		if (e2 > thre2){
-			e2 = thre2;
-		}
-		else if (e2 < -thre2){
-			e2 = -thre2;
-		}
-		
-		//guadagno sull'errore
-		e1 = ke1*e1;
-		e2 = ke2*e2;
-		
-		//Prodotto vettore
-		double Tang[]
-		{
-			-grad1[2] * grad2[1] + grad1[1] * grad2[2],
-			grad1[2] * grad2[0] - grad1[0] * grad2[2],
-			-grad1[1] * grad2[0] + grad1[0] * grad2[1]
-		};
+			array_fgrad[Nfunc1](grad1, xk, yk, zk);
+			array_fgrad[Nfunc2](grad2, xk, yk, zk);
+			*/
 
-		//normalizzazione gradienti
-		normalize1(grad1);
-		normalize1(grad2);
+			//Soglia errore
+			if (e1 > thre1){
+				e1 = thre1;
+			}
+			else if (e1 < -thre1){
+				e1 = -thre1;
+			}
+			if (e2 > thre2){
+				e2 = thre2;
+			}
+			else if (e2 < -thre2){
+				e2 = -thre2;
+			}
 
-		normalize1(Tang);
+			//guadagno sull'errore
+			e1 = ke1*e1;
+			e2 = ke2*e2;
 
-		//vettore risultante
-		double SumNED[] = {
-			e1*grad1[0] + e2*grad2[0] + ktg*Tang[0],
-			e1*grad1[1] + e2*grad2[1] + ktg*Tang[1],
-			e1*grad1[2] + e2*grad2[2] + ktg*Tang[2],
-		};
+			//Prodotto vettore
+			double Tang[]
+			{
+				-grad1[2] * grad2[1] + grad1[1] * grad2[2],
+					grad1[2] * grad2[0] - grad1[0] * grad2[2],
+					-grad1[1] * grad2[0] + grad1[0] * grad2[1]
+			};
 
-		normalize1(SumNED);
+			//normalizzazione gradienti
+			normalize1(grad1);
+			normalize1(grad2);
+			normalize1(Tang);
 
-		SumNED[0] *= dist;
-		SumNED[1] *= dist;
-		SumNED[2] *= dist;
+			//vettore risultante
+			double SumNED[] = {
+				e1*grad1[0] + e2*grad2[0] + ktg*Tang[0],
+				e1*grad1[1] + e2*grad2[1] + ktg*Tang[1],
+				e1*grad1[2] + e2*grad2[2] + ktg*Tang[2],
+			};
 
-		//NED -> drone
-		dxd = R[0] * SumNED[0] + R[1] * SumNED[1] + R[2] * SumNED[2];
-		dyd = R[3] * SumNED[0] + R[4] * SumNED[1] + R[5] * SumNED[2];
-		dzd = R[6] * SumNED[0] + R[7] * SumNED[1] + R[8] * SumNED[2];
-				
+			normalize1(SumNED);
 
-		/*ATTENZIONE!*/
-		//Setup Controllore PID	(cancellare)	
-		/*
-		dxd = dist;
-		dyd = 0;
-		dzd = 0;
-		*/
+			SumNED[0] *= dist;
+			SumNED[1] *= dist;
+			SumNED[2] *= dist;
 
-		if (landing == 1){
-			dxd = 0;
+			//NED -> drone
+			dxd = R[0] * SumNED[0] + R[1] * SumNED[1] + R[2] * SumNED[2];
+			dyd = R[3] * SumNED[0] + R[4] * SumNED[1] + R[5] * SumNED[2];
+			dzd = R[6] * SumNED[0] + R[7] * SumNED[1] + R[8] * SumNED[2];
+
+
+			/*ATTENZIONE!*/
+			//Setup Controllore PID	(cancellare)	
+			/*
+			dxd = dist;
 			dyd = 0;
 			dzd = 0;
+			*/
+
+			if (landing == 1){
+				dxd = 0;
+				dyd = 0;
+				dzd = 0;
+			}
+
+			//Calcolo errore: (velocità desiderata - misurata)
+			/*
+			ex = dxd - dxr;
+			ey = dyd - dyr;
+			ez = dzd - dzr;
+			*/
+			/*
+			//Kalman
+			ex = dxd - dxk;
+			ey = dyd - dyk;
+			ez = dzd - dzk;
+			*/
+			xg = dxd + xr;
+			yg = dyd + yr;
+			zg = dzd + zr;
 		}
 
-		//Calcolo errore: (velocità desiderata - misurata)
-		/*
-		ex = dxd - dxr;
-		ey = dyd - dyr;
-		ez = dzd - dzr;
-		*/
-		/*
-		//Kalman		
-		ex = dxd - dxk;
-		ey = dyd - dyk;
-		ez = dzd - dzk;
-		*/
 
-		ex = dxd;
-		ey = dyd;
-		ez = dzd;
-		
+		ex = xg - xr;
+		ey = yg - yr;
+		ez = zg - zr;
+
 		cumulx = cumulx + ex * mtime;
 		cumuly = cumuly + ey * mtime;
 		cumulz = cumulz + ez * mtime;
-		
+
 		//Derivativo:
+		/*
 		dex = (ex - exback) / mtime;
 		dey = (ey - eyback) / mtime;
 		dez = (ez - ezback) / mtime;
@@ -669,6 +698,10 @@ Module0::DoYourDuty (int wc)
 		exback = ex;
 		eyback = ey;
 		ezback = ez;
+		*/
+		dex = -dxr;
+		dey = -dyr;
+		dez = -dzr;
 
         up = pitchOffset + kpx*(ex) + kix*(cumulx) + kdx*(dex); // pitch command
 		
@@ -761,9 +794,12 @@ Module0::DoYourDuty (int wc)
     //fs2 << fus_longitude << "\t" << fus_latitude << "\t" << fus_height << "\t";
     //fs2 << GPS_heading << "\t" << position_accuracy << "\t" << height_accuracy << "\t" << GPS_num << "\t" << GPS_status << "\t";
 	fs2 << ex << "\t" << ey << "\t" << ez << "\t";
+	fs2 << dex << "\t" << dey << "\t" << dez << "\t";
 	fs2 << cumulx << "\t" << cumuly << "\t" << cumulz << "\t";
     fs2 << xr << "\t" << yr << "\t" << zr << "\t";
-	fs2 << xk << "\t" << yk << "\t" << zk << "\t";
+	fs2 << xp << "\t" << yp << "\t" << zp << "\t";
+	fs2 << xg << "\t" << yg << "\t" << zg << "\t";
+	//fs2 << xk << "\t" << yk << "\t" << zk << "\t";
     fs2 << dxr << "\t" << dyr << "\t" << dzr<<"\t";
 	//fs2 << dxk << "\t" << dyk << "\t" << dzk << "\t";
 	fs2 << dxd << "\t" << dyd << "\t" << dzd << "\t";
@@ -783,6 +819,7 @@ Module0::DoYourDuty (int wc)
 
 	fs2 << ktg << "\t";
 	fs2 << dist << "\t";
+	fs2 << step << "\t";
 	fs2 << pitchOffset << "\t";
 	fs2 << ke1 << "\t" << ke2 << "\t";
 	fs2 << gravity << "\t";

@@ -255,9 +255,9 @@ Module0::initializeDataSaving() {
         fs2 << "x\t";
 		fs2 << "y\t";
 		fs2 << "z\t";
-        fs2 << "dx\t";
-		fs2 << "dy\t";
-		fs2 << "dz\t";
+        fs2 << "dxr\t";
+		fs2 << "dyr\t";
+		fs2 << "dzr\t";
 		fs2 << "dxd\t";
 		fs2 << "dyd\t";
 		fs2 << "dzd\t";

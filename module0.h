@@ -12,16 +12,20 @@ class Module0 : public ETExpert
 	//velocità desiderata e yaw desiderata
 	double dxd, dyd, dzd, yawd;
 	//parametri regolatori : k_costante,(p,i,d)_Proporzionale integrativa o derivativa, vx_ velocità lungo x
-	double kpvx, kpvy, kpvz, kpyaw;
-	double kdvx, kdvy, kdvz, kdyaw;
-	double kivx, kivy, kivz, kiyaw;
+	double kpx, kpy, kpz, kpyaw;
+	double kdx, kdy, kdz, kdyaw;
+	double kix, kiy, kiz, kiyaw;
+
+	//Goals in posizione
+	double xg, yg, zg;
+	double xp, yp, zp;
 
 	double thrp, thrr;		//soglie angoli
 	//altri parametri
 	double ke1, ke2;		//Guadagno sull'errore
 	double thre1, thre2;	//soglie errori
 	double ktg;			//costante componente tangenziale
-	double veld;			//velocità di riferimento (x,y,z)
+	double dist;			//velocità di riferimento (x,y,z)
 	//errori
 	double e1, e2, eyaw;
 	//gradienti
@@ -31,8 +35,8 @@ class Module0 : public ETExpert
 	//parte integrale
 	double cumulx, cumuly, cumulz, cumulyaw;
 	//parte derivativa
-	double edxback, edyback, edzback;
-	double dedx, dedy, dedz;
+	double exback, eyback, ezback;
+	double dex, dey, dez;
 
 	//Offset
 	double pitchOffset, rollOffset, yawOffset;
@@ -48,7 +52,6 @@ class Module0 : public ETExpert
 
 	double mtime, accum_time;
 	double msec, secc;
-	double dzback;
 
 
 	//Controlli angoli
@@ -75,4 +78,5 @@ class Module0 : public ETExpert
 		  void loadParams();
 		  void printParams();
 		  void initializeDataSaving();
+		  double distance();
 };
