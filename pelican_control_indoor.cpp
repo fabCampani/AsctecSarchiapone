@@ -67,9 +67,9 @@ int Nfunc1;
 int Nfunc2;
 
 //Velocità frame NED (debug)
-double dxrDeb[4];
-double dyrDeb[4];
-double dzrDeb[4];
+double dxrDeb;
+double dyrDeb;
+double dzrDeb;
 //Errori
 double edx;
 double edy;
@@ -82,7 +82,7 @@ double zPast[5];
 
 double timePast[5];
 double lastTime;
-int i;
+int indexDer;
 
 double edxCurrent;
 double edyCurrent;
@@ -92,7 +92,7 @@ double dxr3, dxr4, dxr5;
 double dyr3, dyr4, dyr5;
 double dzr3, dzr4, dzr5;
 
-double dxrT[4], dyrT[4], dzrT[4];
+double dxrT, dyrT, dzrT;
 
 //Funzione di normalizzazione(OpenCV) {non utilizzata}
 void normalize1(Mat mat){
@@ -215,9 +215,9 @@ Module0::loadParams() {
 	lastTime = 0;
 	i = 0;
 
-	initializeVett(dxrDeb, 4);
-	initializeVett(dyrDeb, 4);
-	initializeVett(dzrDeb, 4);
+	dxrDeb = 0;
+	dyrDeb = 0;
+	dzrDeb = 0;
 
 	//Carcamento parametri da file
 	ifstream fs("params2.txt");	
@@ -342,11 +342,11 @@ Module0::Init()
 	
 	mtime=0; 
 	accum_time=0;
-	/*
+
 	dxrDeb = 0;
 	dyrDeb = 0;
 	dzrDeb = 0;
-	*/
+
 	printstep = 70; // limits the visualization of the status on the terminal
 	printTimeCounter = 0;
     gps_flag=0;
@@ -404,70 +404,59 @@ Module0::DoYourDuty (int wc)
 			R[8] = cos(phi) * cos(theta);
 
 			/*
-			i = (i + 1) % 5;
-			xPast[i] = xr;
-			yPast[i] = yr;
-			zPast[i] = zr;
-			timePast[i] = accum_time - lastTime;
+			indexDer (indexDer + 1) % 5;
+			xPast[indexDer] = xr;
+			yPast[indexDer] = yr;
+			zPast[indexDer] = zr;
+			timePast[indexDer] = accum_time - lastTime;
 			lastTime = accum_time;
 
-			dxr3 = (xPast[i] - xPast[(5 + i - 2) % 5]) / (timePast[5+i-1]+timePast[i]);
-			dxr4 = (xPast[(5 + i - 3) % 5] + 3 * xPast[(5 + i - 1)] + 6 * xPast[5 + i - 2] + xPast[i])/(6*mtime);
-			dxr5 = (xPast[(5 + i - 4) % 5] - 8 * xPast[(5 + i - 3) % 5] - 8 * xPast[(5 + i - 1)] + xPast[i]) / (12 * mtime);
+			dxr3 = (xPast[indexDer] - xPast[(5 + indexDer - 2) % 5]) / (timePast[5+indexDer-1]+timePast[indexDer]);
+			dxr4 = (xPast[(5 + indexDer - 3) % 5] + 3 * xPast[(5 + indexDer - 1)] + 6 * xPast[5 + indexDer - 2] + xPast[indexDer])/(6*mtime);
+			dxr5 = (xPast[(5 + indexDer - 4) % 5] - 8 * xPast[(5 + indexDer - 3) % 5] - 8 * xPast[(5 + indexDer - 1)] + xPast[indexDer]) / (12 * mtime);
 
-			dyr3 = (yPast[i] - yPast[(5 + i - 2) % 5]) / (timePast[5 + i - 1] + timePast[i]);
-			dyr4 = (yPast[(5 + i - 3) % 5] + 3 * yPast[(5 + i - 1)] + 6 * yPast[5 + i - 2] + yPast[i]) / (6 * mtime);
-			dyr5 = (yPast[(5 + i - 4) % 5] - 8 * yPast[(5 + i - 3) % 5] - 8 * yPast[(5 + i - 1)] + yPast[i]) / (12 * mtime);
+			dyr3 = (yPast[indexDer] - yPast[(5 + indexDer - 2) % 5]) / (timePast[5 + indexDer - 1] + timePast[indexDer]);
+			dyr4 = (yPast[(5 + indexDer - 3) % 5] + 3 * yPast[(5 + indexDer - 1)] + 6 * yPast[5 + indexDer - 2] + yPast[indexDer]) / (6 * mtime);
+			dyr5 = (yPast[(5 + indexDer - 4) % 5] - 8 * yPast[(5 + indexDer - 3) % 5] - 8 * yPast[(5 + indexDer - 1)] + yPast[indexDer]) / (12 * mtime);
 
-			dyr3 = (zPast[i] - zPast[(5 + i - 2) % 5]) / (timePast[5 + i - 1] + timePast[i]);
-			dyr4 = (zPast[(5 + i - 3) % 5] + 3 * zPast[(5 + i - 1)] + 6 * zPast[5 + i - 2] + zPast[i]) / (6 * mtime);
-			dyr5 = (zPast[(5 + i - 4) % 5] - 8 * zPast[(5 + i - 3) % 5] - 8 * zPast[(5 + i - 1)] + zPast[i]) / (12 * mtime);
+			dyr3 = (zPast[indexDer] - zPast[(5 + indexDer - 2) % 5]) / (timePast[5 + indexDer - 1] + timePast[indexDer]);
+			dyr4 = (zPast[(5 + indexDer - 3) % 5] + 3 * zPast[(5 + indexDer - 1)] + 6 * zPast[5 + indexDer - 2] + zPast[indexDer]) / (6 * mtime);
+			dyr5 = (zPast[(5 + indexDer - 4) % 5] - 8 * zPast[(5 + indexDer - 3) % 5] - 8 * zPast[(5 + indexDer - 1)] + zPast[indexDer]) / (12 * mtime);
 			*/
-			double thr_vel = 0.1;
-			//SOGLIA variazione velocità
-			for (int i = 0; i < 3; i++)
-			{
-
-				if ((dxrDeb[i] - dxr) > thr_vel){
-					dxrT[i] = dxrDeb[i] - thr_vel;
-				}
-				else if ((dxrDeb[i] - dxr) < -thr_vel){
-					dxrT[i] = dxrDeb[i] + thr_vel;
-				}
-				else
-					dxrT[i] = dxr;
-
-				if ((dyrDeb[i] - dyr) > thr_vel){
-					dyrT[i] = dyrDeb[i] - thr_vel;
-				}
-				else if ((dyrDeb[i] - dyr) < -thr_vel){
-					dyrT[i] = dyrDeb[i] + thr_vel;
-				}
-				else
-					dyrT[i] = dyr;
-				if ((dzrDeb[i] - dzr) > thr_vel){
-					dzrT[i] = dzrDeb[i] - thr_vel;
-				}
-				else if ((dzrDeb[i] - dzr) < -thr_vel){
-					dzrT[i] = dzrDeb[i] + thr_vel;
-				}
-				else
-					dzrT[i] = dzr;
-
-				dxrDeb[i] = dxrT[i];
-				dyrDeb[i] = dyrT[i];
-				dzrDeb[i] = dzrT[i];
-				thr_vel -= 0.02 * (i+1);
-			}
-
-			dxrT[3] = dxr;
-			dyrT[3] = dyr;
-			dzrT[3] = dzr;
-
-			dxr = dxrT[0];
-			dyr = dyrT[0];
-			dzr = dzrT[0];
 			
+			//SOGLIA variazione velocità
+			double thr_vel= 0.08;
+			if ((dxrDeb - dxr) > thr_vel){
+				dxrT = dxrDeb - thr_vel;
+			}
+			else if ((dxrDeb - dxr) < -thr_vel){
+				dxrT = dxrDeb + thr_vel;
+			}
+			else
+				dxrT = dxr;
+
+			if ((dyrDeb - dyr) > thr_vel){
+				dyrT = dyrDeb - thr_vel;
+			}
+			else if ((dyrDeb - dyr) < -thr_vel){
+				dyrT = dyrDeb + thr_vel;
+			}
+			else
+				dyrT = dyr;
+			if ((dzrDeb - dzr) > thr_vel){
+				dzrT = dzrDeb - thr_vel;
+			}
+			else if ((dzrDeb - dzr) < -thr_vel){
+				dzrT = dzrDeb + thr_vel;
+			}
+			else
+				dzrT = dzr;
+
+			dxrDeb = dxrT;
+			dyrDeb = dyrT;
+			dzrDeb = dzrT;
+
+			/* Rotazione da fare!!!
 			double dxr1 = R[0] * dxr + R[1] * dyr + R[2] * dzr;
 			double dyr1 = R[3] * dxr + R[4] * dyr + R[5] * dzr;
 			double dzr1 = R[6] * dxr + R[7] * dyr + R[8] * dzr;
@@ -477,7 +466,7 @@ Module0::DoYourDuty (int wc)
 			dyr = dyr1;
 			dzr = dzr1;
 
-			
+			*/
 
 			
 		}
@@ -688,15 +677,12 @@ Module0::DoYourDuty (int wc)
     fs2 << xr << "\t" << yr << "\t" << zr << "\t";
     fs2 << dxr << "\t" << dyr << "\t" << dzr<<"\t";
 
-	fs2 << dxrT[0] << "\t" << dyrT[0] << "\t" << dzrT[0] << "\t";
-	fs2 << dxrT[1] << "\t" << dyrT[1] << "\t" << dzrT[1] << "\t";
-	fs2 << dxrT[2] << "\t" << dyrT[2] << "\t" << dzrT[2] << "\t";
-	fs2 << dxrT[3] << "\t" << dyrT[3] << "\t" << dzrT[3] << "\t";
-	/*
+	fs2 << dxrT << "\t" << dyrT << "\t" << dzrT << "\t";
+
 	fs2 << dxr3 << "\t" << dyr3 << "\t" << dzr3 << "\t";
 	fs2 << dxr4 << "\t" << dyr4 << "\t" << dzr4 << "\t";
 	fs2 << dxr5 << "\t" << dyr5 << "\t" << dzr5 << "\t";
-	*/
+
 
 	fs2 << dxd << "\t" << dyd << "\t" << dzd << "\t";
 	//fs2 << dxrDeb << "\t" << dyrDeb << "\t" << dzrDeb << "\t";
