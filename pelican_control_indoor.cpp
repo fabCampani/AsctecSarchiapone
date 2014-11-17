@@ -82,6 +82,7 @@ double zPast[5];
 
 double timePast[5];
 double lastTime;
+double newTime;
 int i;
 
 double edxCurrent;
@@ -91,6 +92,11 @@ double edzCurrent;
 double dxr3, dxr4, dxr5;
 double dyr3, dyr4, dyr5;
 double dzr3, dzr4, dzr5;
+
+
+double xrLast;
+double xrOld;
+
 
 double dxrT[4], dyrT[4], dzrT[4];
 
@@ -212,7 +218,10 @@ Module0::loadParams() {
 	initializeVett(zPast, 5);
 
 	initializeVett(timePast, 5);
-	lastTime = 0;
+	lastTime = 0.1;
+	newTime = 0.101;
+	xrOld = 0;
+	xrLast = 0;
 	i = 0;
 
 	initializeVett(dxrDeb, 4);
@@ -412,6 +421,17 @@ Module0::DoYourDuty (int wc)
 			R[2] = -sin(theta);
 			R[5] = sin(phi) * cos(theta);
 			R[8] = cos(phi) * cos(theta);
+
+
+			newTime = accum_time - lastTime;
+
+			dxr3 = (1 / (newTime + lastTime))*((lastTime / newTime)*(xr - xrLast) + (newTime / lastTime)*(xrLast - xrOld);
+
+			//xrOld  == xr -2
+			//xrLast == xr -1
+			xrOld = xrLast;
+			xrLast = xr;
+			lastTime = newTime;
 
 			/*
 			i = (i + 1) % 5;
