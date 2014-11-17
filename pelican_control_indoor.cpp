@@ -82,7 +82,8 @@ double zPast[5];
 
 double timePast[5];
 double lastTime;
-double newTime;
+double oldTime;
+double step1, step2;
 int i;
 
 double edxCurrent;
@@ -219,7 +220,9 @@ Module0::loadParams() {
 
 	initializeVett(timePast, 5);
 	lastTime = 0.1;
-	newTime = 0.101;
+	oldTime = 0.101;
+	step1 = 0.1;
+	step2 = 0.1;
 	xrOld = 0;
 	xrLast = 0;
 	i = 0;
@@ -425,15 +428,19 @@ Module0::DoYourDuty (int wc)
 			R[8] = cos(phi) * cos(theta);
 
 
-			newTime = accum_time - lastTime;
+			step1 = accum_time - lastTime;
+			step2 = lastTime - oldTime;
 
-			dxr3 = (1 / (newTime + lastTime))*((lastTime / newTime)*(xr - xrLast) + (newTime / lastTime)*(xrLast - xrOld));
+
+
+			dxr3 = (1 / (step1 + step2))*((step2 / step1)*(xr - xrLast) + (step1 / step2)*(xrLast - xrOld));
 
 			//xrOld  == xr -2
 			//xrLast == xr -1
 			xrOld = xrLast;
 			xrLast = xr;
-			lastTime = newTime;
+			oldTime = lastTime;
+			lastTime = accum_time;
 
 			/*
 			i = (i + 1) % 5;
