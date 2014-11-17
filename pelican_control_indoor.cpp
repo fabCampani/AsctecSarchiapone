@@ -79,6 +79,9 @@ double edz;
 double xPast[5];
 double yPast[5];
 double zPast[5];
+
+double timePast[5];
+double lastTime;
 int i;
 
 double edxCurrent;
@@ -202,6 +205,9 @@ Module0::loadParams() {
 	initializeVett(xPast, 5);
 	initializeVett(yPast, 5);
 	initializeVett(zPast, 5);
+
+	initializeVett(timePast, 5);
+	lastTime = 0;
 	i = 0;
 
 	//Carcamento parametri da file
@@ -391,21 +397,28 @@ Module0::DoYourDuty (int wc)
 			R[8] = cos(phi) * cos(theta);
 
 
+			
+
+
 			i = (i + 1) % 5;
 			xPast[i] = xr;
 			yPast[i] = yr;
 			zPast[i] = zr;
+			timePast[i] = accum_time - lastTime;
+			lastTime = accum_time;
 
 
-			dxr3 = (xPast[i] - xPast[(5 + i - 2) % 5]) / (2 * mtime);
+
+
+			dxr3 = (xPast[i] - xPast[(5 + i - 2) % 5]) / (timePast[5+i-1]+timePast[i]);
 			dxr4 = (xPast[(5 + i - 3) % 5] + 3 * xPast[(5 + i - 1)] + 6 * xPast[5 + i - 2] + xPast[i])/(6*mtime);
 			dxr5 = (xPast[(5 + i - 4) % 5] - 8 * xPast[(5 + i - 3) % 5] - 8 * xPast[(5 + i - 1)] + xPast[i]) / (12 * mtime);
 
-			dyr3 = (yPast[i] - yPast[(5 + i - 2) % 5]) / (2 * mtime);
+			dyr3 = (yPast[i] - yPast[(5 + i - 2) % 5]) / (timePast[5 + i - 1] + timePast[i]);
 			dyr4 = (yPast[(5 + i - 3) % 5] + 3 * yPast[(5 + i - 1)] + 6 * yPast[5 + i - 2] + yPast[i]) / (6 * mtime);
 			dyr5 = (yPast[(5 + i - 4) % 5] - 8 * yPast[(5 + i - 3) % 5] - 8 * yPast[(5 + i - 1)] + yPast[i]) / (12 * mtime);
 
-			dyr3 = (zPast[i] - zPast[(5 + i - 2) % 5]) / (2 * mtime);
+			dyr3 = (zPast[i] - zPast[(5 + i - 2) % 5]) / (timePast[5 + i - 1] + timePast[i]);
 			dyr4 = (zPast[(5 + i - 3) % 5] + 3 * zPast[(5 + i - 1)] + 6 * zPast[5 + i - 2] + zPast[i]) / (6 * mtime);
 			dyr5 = (zPast[(5 + i - 4) % 5] - 8 * zPast[(5 + i - 3) % 5] - 8 * zPast[(5 + i - 1)] + zPast[i]) / (12 * mtime);
 
