@@ -215,6 +215,10 @@ Module0::loadParams() {
 	lastTime = 0;
 	i = 0;
 
+	dxrDeb = 0;
+	dyrDeb = 0;
+	dzrDeb = 0;
+
 	//Carcamento parametri da file
 	ifstream fs("params2.txt");	
 	if (fs.is_open()){
@@ -274,8 +278,6 @@ Module0::initializeDataSaving() {
 		fs2 << "dxr3" << "\t" << "dyr3" << "\t" << "dzr3" << "\t";
 		fs2 << "dxr4" << "\t" << "dyr4" << "\t" << "dzr4" << "\t";
 		fs2 << "dxr5" << "\t" << "dyr5" << "\t" << "dzr5" << "\t";
-
-
 
 		fs2 << "dxd\t";
 		fs2 << "dyd\t";
@@ -401,19 +403,13 @@ Module0::DoYourDuty (int wc)
 			R[5] = sin(phi) * cos(theta);
 			R[8] = cos(phi) * cos(theta);
 
-
-			
-
-
+			/*
 			i = (i + 1) % 5;
 			xPast[i] = xr;
 			yPast[i] = yr;
 			zPast[i] = zr;
 			timePast[i] = accum_time - lastTime;
 			lastTime = accum_time;
-
-
-
 
 			dxr3 = (xPast[i] - xPast[(5 + i - 2) % 5]) / (timePast[5+i-1]+timePast[i]);
 			dxr4 = (xPast[(5 + i - 3) % 5] + 3 * xPast[(5 + i - 1)] + 6 * xPast[5 + i - 2] + xPast[i])/(6*mtime);
@@ -426,23 +422,24 @@ Module0::DoYourDuty (int wc)
 			dyr3 = (zPast[i] - zPast[(5 + i - 2) % 5]) / (timePast[5 + i - 1] + timePast[i]);
 			dyr4 = (zPast[(5 + i - 3) % 5] + 3 * zPast[(5 + i - 1)] + 6 * zPast[5 + i - 2] + zPast[i]) / (6 * mtime);
 			dyr5 = (zPast[(5 + i - 4) % 5] - 8 * zPast[(5 + i - 3) % 5] - 8 * zPast[(5 + i - 1)] + zPast[i]) / (12 * mtime);
-
+			*/
+			
 			//SOGLIA variazione velocità
-			double thr_vel= 0.01;
-
+			double thr_vel= 0.08;
 			if ((dxrDeb - dxr) > thr_vel){
 				dxrT = dxrDeb - thr_vel;
 			}
 			else if ((dxrDeb - dxr) < -thr_vel){
-				dxrT = dxrDeb + thr_vel
+				dxrT = dxrDeb + thr_vel;
 			}
 			else
 				dxrT = dxr;
+
 			if ((dyrDeb - dyr) > thr_vel){
 				dyrT = dyrDeb - thr_vel;
 			}
 			else if ((dyrDeb - dyr) < -thr_vel){
-				dyrT = dyrDeb + thr_vel
+				dyrT = dyrDeb + thr_vel;
 			}
 			else
 				dyrT = dyr;
@@ -450,25 +447,26 @@ Module0::DoYourDuty (int wc)
 				dzrT = dzrDeb - thr_vel;
 			}
 			else if ((dzrDeb - dzr) < -thr_vel){
-				dzrT = dzrDeb + thr_vel
+				dzrT = dzrDeb + thr_vel;
 			}
 			else
 				dzrT = dzr;
 
-			dxrDeb = dxr;
-			dyrDeb = dyr;
-			dzrDeb = dzr;
+			dxrDeb = dxrT;
+			dyrDeb = dyrT;
+			dzrDeb = dzrT;
 
 			/* Rotazione da fare!!!
 			double dxr1 = R[0] * dxr + R[1] * dyr + R[2] * dzr;
 			double dyr1 = R[3] * dxr + R[4] * dyr + R[5] * dzr;
 			double dzr1 = R[6] * dxr + R[7] * dyr + R[8] * dzr;
-			*/
+			
+
 			dxr = dxr1;
 			dyr = dyr1;
 			dzr = dzr1;
 
-
+			*/
 
 			
 		}
@@ -570,16 +568,6 @@ Module0::DoYourDuty (int wc)
 		edy = dyd - dyr;
 		edz = dzd - dzr;
 
-		/*PROVA*/
-		edxPast[i] = edx;
-		edyPast[i] = edy;
-		edzPast[i] = edz;
-		i = (i + 1) % NPAST;
-
-		edxCurrent = media(edxPast, NPAST);
-		edyCurrent = media(edyPast, NPAST);
-		edzCurrent = media(edzPast, NPAST);
-		/*FINE PROVA*/
 
 		cumulx = cumulx + edx*mtime;
 		cumuly = cumuly + edy*mtime;
