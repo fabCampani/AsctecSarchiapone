@@ -435,6 +435,13 @@ Module0::DoYourDuty (int wc)
 			dxr = dxr1;
 			dyr = dyr1;
 			dzr = dzr1;
+
+			double thr_vel;
+
+			if ((dxrDeb - dxr) > 0.01){
+				dxr = 
+			}
+
 			
 		}
 	}
