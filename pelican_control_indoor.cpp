@@ -156,12 +156,12 @@ Module0::loadParams() {
 	kpvy = 760;
 	kpvz = -550.0;
 
-	kpyaw = 1500.0;
+	kpyaw = 1600.0;
 
 	kdvx = 0.0;
 	kdvy = 0.0;
 	kdvz = 0.0;
-	kdyaw = 0.0;
+	kdyaw = 200.0;
 	
 	kivx = 0;
 	kivy = 0;
@@ -661,7 +661,8 @@ Module0::DoYourDuty (int wc)
 		//Controllo Yaw (MAI TESTATO)
 		yawd = atan2(y_target - yr, x_target - xr);
 		eyaw = sin(yawd - yawr);
-		uy = kpyaw*(eyaw);
+
+		uy = kpyaw*(eyaw)+kdyaw*(-dyawr);
 
         // thresholds to avoid too fast movements
         int16_t CTRL_back;
