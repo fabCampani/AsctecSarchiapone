@@ -288,6 +288,8 @@ Module0::initializeDataSaving() {
 		fs2 << "dxr4" << "\t" << "dyr4" << "\t" << "dzr4" << "\t";
 		fs2 << "dxr5" << "\t" << "dyr5" << "\t" << "dzr5" << "\t";
 
+		fs2 << "dxrDer" << "\t" << "dyrDer" << "\t" << "dzrDer" << "\t";
+
 		fs2 << "dxd\t";
 		fs2 << "dyd\t";
 		fs2 << "dzd\t";
@@ -425,7 +427,7 @@ Module0::DoYourDuty (int wc)
 
 			newTime = accum_time - lastTime;
 
-			dxr3 = (1 / (newTime + lastTime))*((lastTime / newTime)*(xr - xrLast) + (newTime / lastTime)*(xrLast - xrOld);
+			dxr3 = (1 / (newTime + lastTime))*((lastTime / newTime)*(xr - xrLast) + (newTime / lastTime)*(xrLast - xrOld));
 
 			//xrOld  == xr -2
 			//xrLast == xr -1
@@ -718,8 +720,9 @@ Module0::DoYourDuty (int wc)
 	fs2 << dxrT[1] << "\t" << dyrT[1] << "\t" << dzrT[1] << "\t";
 	fs2 << dxrT[2] << "\t" << dyrT[2] << "\t" << dzrT[2] << "\t";
 	fs2 << dxrT[3] << "\t" << dyrT[3] << "\t" << dzrT[3] << "\t";
-	/*
+	
 	fs2 << dxr3 << "\t" << dyr3 << "\t" << dzr3 << "\t";
+	/*
 	fs2 << dxr4 << "\t" << dyr4 << "\t" << dzr4 << "\t";
 	fs2 << dxr5 << "\t" << dyr5 << "\t" << dzr5 << "\t";
 	*/
