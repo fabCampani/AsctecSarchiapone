@@ -82,7 +82,7 @@ double zPast[5];
 
 double timePast[5];
 double lastTime;
-int i;
+int indexDer;
 
 double edxCurrent;
 double edyCurrent;
@@ -404,24 +404,24 @@ Module0::DoYourDuty (int wc)
 			R[8] = cos(phi) * cos(theta);
 
 			/*
-			i = (i + 1) % 5;
-			xPast[i] = xr;
-			yPast[i] = yr;
-			zPast[i] = zr;
-			timePast[i] = accum_time - lastTime;
+			indexDer (indexDer + 1) % 5;
+			xPast[indexDer] = xr;
+			yPast[indexDer] = yr;
+			zPast[indexDer] = zr;
+			timePast[indexDer] = accum_time - lastTime;
 			lastTime = accum_time;
 
-			dxr3 = (xPast[i] - xPast[(5 + i - 2) % 5]) / (timePast[5+i-1]+timePast[i]);
-			dxr4 = (xPast[(5 + i - 3) % 5] + 3 * xPast[(5 + i - 1)] + 6 * xPast[5 + i - 2] + xPast[i])/(6*mtime);
-			dxr5 = (xPast[(5 + i - 4) % 5] - 8 * xPast[(5 + i - 3) % 5] - 8 * xPast[(5 + i - 1)] + xPast[i]) / (12 * mtime);
+			dxr3 = (xPast[indexDer] - xPast[(5 + indexDer - 2) % 5]) / (timePast[5+indexDer-1]+timePast[indexDer]);
+			dxr4 = (xPast[(5 + indexDer - 3) % 5] + 3 * xPast[(5 + indexDer - 1)] + 6 * xPast[5 + indexDer - 2] + xPast[indexDer])/(6*mtime);
+			dxr5 = (xPast[(5 + indexDer - 4) % 5] - 8 * xPast[(5 + indexDer - 3) % 5] - 8 * xPast[(5 + indexDer - 1)] + xPast[indexDer]) / (12 * mtime);
 
-			dyr3 = (yPast[i] - yPast[(5 + i - 2) % 5]) / (timePast[5 + i - 1] + timePast[i]);
-			dyr4 = (yPast[(5 + i - 3) % 5] + 3 * yPast[(5 + i - 1)] + 6 * yPast[5 + i - 2] + yPast[i]) / (6 * mtime);
-			dyr5 = (yPast[(5 + i - 4) % 5] - 8 * yPast[(5 + i - 3) % 5] - 8 * yPast[(5 + i - 1)] + yPast[i]) / (12 * mtime);
+			dyr3 = (yPast[indexDer] - yPast[(5 + indexDer - 2) % 5]) / (timePast[5 + indexDer - 1] + timePast[indexDer]);
+			dyr4 = (yPast[(5 + indexDer - 3) % 5] + 3 * yPast[(5 + indexDer - 1)] + 6 * yPast[5 + indexDer - 2] + yPast[indexDer]) / (6 * mtime);
+			dyr5 = (yPast[(5 + indexDer - 4) % 5] - 8 * yPast[(5 + indexDer - 3) % 5] - 8 * yPast[(5 + indexDer - 1)] + yPast[indexDer]) / (12 * mtime);
 
-			dyr3 = (zPast[i] - zPast[(5 + i - 2) % 5]) / (timePast[5 + i - 1] + timePast[i]);
-			dyr4 = (zPast[(5 + i - 3) % 5] + 3 * zPast[(5 + i - 1)] + 6 * zPast[5 + i - 2] + zPast[i]) / (6 * mtime);
-			dyr5 = (zPast[(5 + i - 4) % 5] - 8 * zPast[(5 + i - 3) % 5] - 8 * zPast[(5 + i - 1)] + zPast[i]) / (12 * mtime);
+			dyr3 = (zPast[indexDer] - zPast[(5 + indexDer - 2) % 5]) / (timePast[5 + indexDer - 1] + timePast[indexDer]);
+			dyr4 = (zPast[(5 + indexDer - 3) % 5] + 3 * zPast[(5 + indexDer - 1)] + 6 * zPast[5 + indexDer - 2] + zPast[indexDer]) / (6 * mtime);
+			dyr5 = (zPast[(5 + indexDer - 4) % 5] - 8 * zPast[(5 + indexDer - 3) % 5] - 8 * zPast[(5 + indexDer - 1)] + zPast[indexDer]) / (12 * mtime);
 			*/
 			
 			//SOGLIA variazione velocità
