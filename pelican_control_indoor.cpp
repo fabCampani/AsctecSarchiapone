@@ -88,6 +88,11 @@ double edxCurrent;
 double edyCurrent;
 double edzCurrent;
 
+double dxr3, dxr4, dxr5;
+double dyr3, dyr4, dyr5;
+double dzr3, dzr4, dzr5;
+
+double dxrT, dyrT, dzrT;
 
 //Funzione di normalizzazione(OpenCV) {non utilizzata}
 void normalize1(Mat mat){
@@ -265,7 +270,7 @@ Module0::initializeDataSaving() {
 		fs2 << "dyr\t";
 		fs2 << "dzr\t";
 
-
+		fs2 << "dxrT" << "\t" << "dyrT" << "\t" << "dzrT" << "\t";
 		fs2 << "dxr3" << "\t" << "dyr3" << "\t" << "dzr3" << "\t";
 		fs2 << "dxr4" << "\t" << "dyr4" << "\t" << "dzr4" << "\t";
 		fs2 << "dxr5" << "\t" << "dyr5" << "\t" << "dzr5" << "\t";
@@ -422,25 +427,48 @@ Module0::DoYourDuty (int wc)
 			dyr4 = (zPast[(5 + i - 3) % 5] + 3 * zPast[(5 + i - 1)] + 6 * zPast[5 + i - 2] + zPast[i]) / (6 * mtime);
 			dyr5 = (zPast[(5 + i - 4) % 5] - 8 * zPast[(5 + i - 3) % 5] - 8 * zPast[(5 + i - 1)] + zPast[i]) / (12 * mtime);
 
+			//SOGLIA variazione velocità
+			double thr_vel= 0.01;
 
+			if ((dxrDeb - dxr) > thr_vel){
+				dxrT = dxrDeb - thr_vel;
+			}
+			else if ((dxrDeb - dxr) < -thr_vel){
+				dxrT = dxrDeb + thr_vel
+			}
+			else
+				dxrT = dxr;
+			if ((dyrDeb - dyr) > thr_vel){
+				dyrT = dyrDeb - thr_vel;
+			}
+			else if ((dyrDeb - dyr) < -thr_vel){
+				dyrT = dyrDeb + thr_vel
+			}
+			else
+				dyrT = dyr;
+			if ((dzrDeb - dzr) > thr_vel){
+				dzrT = dzrDeb - thr_vel;
+			}
+			else if ((dzrDeb - dzr) < -thr_vel){
+				dzrT = dzrDeb + thr_vel
+			}
+			else
+				dzrT = dzr;
 
 			dxrDeb = dxr;
 			dyrDeb = dyr;
 			dzrDeb = dzr;
 
+			/* Rotazione da fare!!!
 			double dxr1 = R[0] * dxr + R[1] * dyr + R[2] * dzr;
 			double dyr1 = R[3] * dxr + R[4] * dyr + R[5] * dzr;
 			double dzr1 = R[6] * dxr + R[7] * dyr + R[8] * dzr;
-
+			*/
 			dxr = dxr1;
 			dyr = dyr1;
 			dzr = dzr1;
 
-			double thr_vel;
 
-			if ((dxrDeb - dxr) > 0.01){
-				dxr = 
-			}
 
 			
 		}
@@ -660,6 +688,8 @@ Module0::DoYourDuty (int wc)
 	fs2 << cumulx << "\t" << cumuly << "\t" << cumulz << "\t";
     fs2 << xr << "\t" << yr << "\t" << zr << "\t";
     fs2 << dxr << "\t" << dyr << "\t" << dzr<<"\t";
+
+	fs2 << dxrT << "\t" << dyrT << "\t" << dzrT << "\t";
 
 	fs2 << dxr3 << "\t" << dyr3 << "\t" << dzr3 << "\t";
 	fs2 << dxr4 << "\t" << dyr4 << "\t" << dzr4 << "\t";
