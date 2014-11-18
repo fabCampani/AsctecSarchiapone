@@ -66,7 +66,10 @@ extern int landing;
 int Nfunc1;
 int Nfunc2;
 
-
+//Velocità frame NED (debug)
+double dxrDeb[4];
+double dyrDeb[4];
+double dzrDeb[4];
 //Errori
 double edx;
 double edy;
@@ -95,16 +98,8 @@ double dzr3, dzr4, dzr5;
 double xrLast;
 double xrOld;
 
-//velocità filtrate con Thresold
-double dxrT, dyrT, dzrT;
-double thr_vel
-double dxrDeb;
-double dyrDeb;
-double dzrDeb;
 
-double dxrUn;
-double dyrUn;
-double dzrUn;
+double dxrT[4], dyrT[4], dzrT[4];
 
 //Funzione di normalizzazione(OpenCV) {non utilizzata}
 void normalize1(Mat mat){
@@ -161,12 +156,12 @@ Module0::loadParams() {
 	kpvy = 760;
 	kpvz = -550.0;
 
-	kpyaw = 1700.0;
+	kpyaw = 1600.0;
 
 	kdvx = 0.0;
 	kdvy = 0.0;
 	kdvz = 0.0;
-	kdyaw = 250.0;
+	kdyaw = 200.0;
 	
 	kivx = 0;
 	kivy = 0;
@@ -232,6 +227,10 @@ Module0::loadParams() {
 	xrLast = 0;
 	i = 0;
 
+	initializeVett(dxrDeb, 4);
+	initializeVett(dyrDeb, 4);
+	initializeVett(dzrDeb, 4);
+
 	//Carcamento parametri da file
 	ifstream fs("params2.txt");	
 	if (fs.is_open()){
@@ -242,7 +241,6 @@ Module0::loadParams() {
 		//4th line: ktg speed
 		//5th line: gravitycompensation pitchOffset
 		//6th line: ke1 ke2 (always negative)
-		//7th line: thr_vel
 		fs >> kpvx;
 		fs >> kpvy;
 		fs >> kpvz;
@@ -262,8 +260,6 @@ Module0::loadParams() {
 
 		fs >> ke1;
 		fs >> ke2;
-
-		fs >> thr_vel;
 	}
 }
 
@@ -291,8 +287,9 @@ Module0::initializeDataSaving() {
 		fs2 << "dzr\t";
 
 		fs2 << "dxrT" << "\t" << "dyrT" << "\t" << "dzrT" << "\t";
-		fs2 << "dxrUn" << "\t" << "dyrUn" << "\t" << "dzrUn" << "\t";
-
+		fs2 << "dxr3" << "\t" << "dyr3" << "\t" << "dzr3" << "\t";
+		fs2 << "dxr4" << "\t" << "dyr4" << "\t" << "dzr4" << "\t";
+		fs2 << "dxr5" << "\t" << "dyr5" << "\t" << "dzr5" << "\t";
 
 		fs2 << "dxrDer" << "\t" << "dyrDer" << "\t" << "dzrDer" << "\t";
 
@@ -326,7 +323,6 @@ Module0::initializeDataSaving() {
 		fs2 << "pitchoff\t";
 		fs2 << "ke1\tke2\t";
 		fs2 << "gravity\n";
-		fs2 << "thr_vel";
 
 		
 
@@ -360,12 +356,11 @@ Module0::Init()
 	
 	mtime=0; 
 	accum_time=0;
-
-	//inizializzazione soglia
+	/*
 	dxrDeb = 0;
 	dyrDeb = 0;
 	dzrDeb = 0;
-	
+	*/
 	printstep = 70; // limits the visualization of the status on the terminal
 	printTimeCounter = 0;
     gps_flag=0;
@@ -385,7 +380,6 @@ Module0::DoYourDuty (int wc)
     phi = 0.001 * (double) angle_roll *M_PI/180.0;    // Radiants
 	psi = 0.001 * (double)angle_yaw *M_PI / 180.0;  // Radiants -> ?
 
-	//Calcolo della matrice di rotazione ogni volta:
 	R[0] = cos(theta) * cos(yawr);
 	R[3] = -cos(phi) * sin(yawr) + sin(phi) * sin(theta) * cos(yawr);
 	R[6] = sin(phi) * sin(yawr) + cos(phi) * sin(theta) * cos(yawr);
@@ -423,7 +417,6 @@ Module0::DoYourDuty (int wc)
 			dzr = *((double*)((char*)(rxMsg->ReadData()) + 6 * sizeof(double)));
 			dyawr = *((double*)((char*)(rxMsg->ReadData()) + 7 * sizeof(double)));
 
-			//Aggiornamento Rotation Matrix per angolo yaw (telecamere)
 			R[0] = cos(theta) * cos(yawr);
 			R[3] = -cos(phi) * sin(yawr) + sin(phi) * sin(theta) * cos(yawr);
 			R[6] = sin(phi) * sin(yawr) + cos(phi) * sin(theta) * cos(yawr);
@@ -434,9 +427,11 @@ Module0::DoYourDuty (int wc)
 			R[5] = sin(phi) * cos(theta);
 			R[8] = cos(phi) * cos(theta);
 
-			//PROVA derivata a più punti
+
 			step1 = accum_time - lastTime;
 			step2 = lastTime - oldTime;
+
+
 
 			dxr3 = (1 / (step1 + step2))*((step2 / step1)*(xr - xrLast) + (step1 / step2)*(xrLast - xrOld));
 
@@ -449,67 +444,69 @@ Module0::DoYourDuty (int wc)
 
 			/*
 			i = (i + 1) % 5;
-			xPasT = xr;
-			yPasT = yr;
-			zPasT = zr;
-			timePasT = accum_time - lastTime;
+			xPast[i] = xr;
+			yPast[i] = yr;
+			zPast[i] = zr;
+			timePast[i] = accum_time - lastTime;
 			lastTime = accum_time;
 
-			dxr3 = (xPasT - xPast[(5 + i - 2) % 5]) / (timePast[5+i-1]+timePasT);
-			dxr4 = (xPast[(5 + i - 3) % 5] + 3 * xPast[(5 + i - 1)] + 6 * xPast[5 + i - 2] + xPasT)/(6*mtime);
-			dxr5 = (xPast[(5 + i - 4) % 5] - 8 * xPast[(5 + i - 3) % 5] - 8 * xPast[(5 + i - 1)] + xPasT) / (12 * mtime);
+			dxr3 = (xPast[i] - xPast[(5 + i - 2) % 5]) / (timePast[5+i-1]+timePast[i]);
+			dxr4 = (xPast[(5 + i - 3) % 5] + 3 * xPast[(5 + i - 1)] + 6 * xPast[5 + i - 2] + xPast[i])/(6*mtime);
+			dxr5 = (xPast[(5 + i - 4) % 5] - 8 * xPast[(5 + i - 3) % 5] - 8 * xPast[(5 + i - 1)] + xPast[i]) / (12 * mtime);
 
-			dyr3 = (yPasT - yPast[(5 + i - 2) % 5]) / (timePast[5 + i - 1] + timePasT);
-			dyr4 = (yPast[(5 + i - 3) % 5] + 3 * yPast[(5 + i - 1)] + 6 * yPast[5 + i - 2] + yPasT) / (6 * mtime);
-			dyr5 = (yPast[(5 + i - 4) % 5] - 8 * yPast[(5 + i - 3) % 5] - 8 * yPast[(5 + i - 1)] + yPasT) / (12 * mtime);
+			dyr3 = (yPast[i] - yPast[(5 + i - 2) % 5]) / (timePast[5 + i - 1] + timePast[i]);
+			dyr4 = (yPast[(5 + i - 3) % 5] + 3 * yPast[(5 + i - 1)] + 6 * yPast[5 + i - 2] + yPast[i]) / (6 * mtime);
+			dyr5 = (yPast[(5 + i - 4) % 5] - 8 * yPast[(5 + i - 3) % 5] - 8 * yPast[(5 + i - 1)] + yPast[i]) / (12 * mtime);
 
-			dyr3 = (zPasT - zPast[(5 + i - 2) % 5]) / (timePast[5 + i - 1] + timePasT);
-			dyr4 = (zPast[(5 + i - 3) % 5] + 3 * zPast[(5 + i - 1)] + 6 * zPast[5 + i - 2] + zPasT) / (6 * mtime);
-			dyr5 = (zPast[(5 + i - 4) % 5] - 8 * zPast[(5 + i - 3) % 5] - 8 * zPast[(5 + i - 1)] + zPasT) / (12 * mtime);
+			dyr3 = (zPast[i] - zPast[(5 + i - 2) % 5]) / (timePast[5 + i - 1] + timePast[i]);
+			dyr4 = (zPast[(5 + i - 3) % 5] + 3 * zPast[(5 + i - 1)] + 6 * zPast[5 + i - 2] + zPast[i]) / (6 * mtime);
+			dyr5 = (zPast[(5 + i - 4) % 5] - 8 * zPast[(5 + i - 3) % 5] - 8 * zPast[(5 + i - 1)] + zPast[i]) / (12 * mtime);
 			*/
-			
 
-			//Soglia velocità
-			thr_vel = 0.08; //0.1 0.08 0.04
-			int i = 0;	
+			double thr_vel = 0.1; //0.1 0.08 0.04
+			//SOGLIA variazione velocità
+			for (int i = 0; i < 3; i++)
+			{
 
-			if ((dxrDeb - dxr) > thr_vel){
-				dxrT = dxrDeb - thr_vel;
-			}
-			else if ((dxrDeb - dxr) < -thr_vel){
-				dxrT = dxrDeb + thr_vel;
-			}
-			else
-				dxrT = dxr;
+				if ((dxrDeb[i] - dxr) > thr_vel){
+					dxrT[i] = dxrDeb[i] - thr_vel;
+				}
+				else if ((dxrDeb[i] - dxr) < -thr_vel){
+					dxrT[i] = dxrDeb[i] + thr_vel;
+				}
+				else
+					dxrT[i] = dxr;
 
-			if ((dyrDeb - dyr) > thr_vel){
-				dyrT = dyrDeb - thr_vel;
+				if ((dyrDeb[i] - dyr) > thr_vel){
+					dyrT[i] = dyrDeb[i] - thr_vel;
+				}
+				else if ((dyrDeb[i] - dyr) < -thr_vel){
+					dyrT[i] = dyrDeb[i] + thr_vel;
+				}
+				else
+					dyrT[i] = dyr;
+				if ((dzrDeb[i] - dzr) > thr_vel){
+					dzrT[i] = dzrDeb[i] - thr_vel;
+				}
+				else if ((dzrDeb[i] - dzr) < -thr_vel){
+					dzrT[i] = dzrDeb[i] + thr_vel;
+				}
+				else
+					dzrT[i] = dzr;
+
+				dxrDeb[i] = dxrT[i];
+				dyrDeb[i] = dyrT[i];
+				dzrDeb[i] = dzrT[i];
+				thr_vel -= 0.02 * (i+1);
 			}
-			else if ((dyrDeb - dyr) < -thr_vel){
-				dyrT = dyrDeb + thr_vel;
-			}
-			else
-				dyrT = dyr;
-			if ((dzrDeb - dzr) > thr_vel){
-				dzrT = dzrDeb - thr_vel;
-			}
-			else if ((dzrDeb - dzr) < -thr_vel){
-				dzrT = dzrDeb + thr_vel;
-			}
-			else
-				dzrT = dzr;
-			//Valore precedente
-			dxrDeb = dxrT;
-			dyrDeb = dyrT;
-			dzrDeb = dzrT;
-			//velocità non filtrata
-			dxrUn = dxr;
-			dyrUn = dyr;
-			dzrUn = dzr;
-			//Assegnamento velocità reale
-			dxr = dxrT;
-			dyr = dyrT;
-			dzr = dzrT;
+
+			dxrT[3] = dxr;
+			dyrT[3] = dyr;
+			dzrT[3] = dzr;
+
+			dxr = dxrT[0];
+			dyr = dyrT[0];
+			dzr = dzrT[0];
 			
 			double dxr1 = R[0] * dxr + R[1] * dyr + R[2] * dzr;
 			double dyr1 = R[3] * dxr + R[4] * dyr + R[5] * dzr;
@@ -727,8 +724,10 @@ Module0::DoYourDuty (int wc)
     fs2 << xr << "\t" << yr << "\t" << zr << "\t";
     fs2 << dxr << "\t" << dyr << "\t" << dzr<<"\t";
 
-	fs2 << dxrT << "\t" << dyrT << "\t" << dzrT << "\t";
-	fs2 << dxrUn << "\t" << dyrUn << "\t" << dzrUn << "\t";
+	fs2 << dxrT[0] << "\t" << dyrT[0] << "\t" << dzrT[0] << "\t";
+	fs2 << dxrT[1] << "\t" << dyrT[1] << "\t" << dzrT[1] << "\t";
+	fs2 << dxrT[2] << "\t" << dyrT[2] << "\t" << dzrT[2] << "\t";
+	fs2 << dxrT[3] << "\t" << dyrT[3] << "\t" << dzrT[3] << "\t";
 	
 	fs2 << dxr3 << "\t" << dyr3 << "\t" << dzr3 << "\t";
 	/*
@@ -757,7 +756,6 @@ Module0::DoYourDuty (int wc)
 	fs2 << pitchOffset << "\t";
 	fs2 << ke1 << "\t" << ke2 << "\t";
 	fs2 << gravity << "\t";
-	fs2 << thr_vel;
     fs2 <<  "\n";
 
 	}
