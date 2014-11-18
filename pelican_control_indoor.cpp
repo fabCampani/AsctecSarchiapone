@@ -60,9 +60,6 @@ extern int landing;
 
 #define LANDING 95
 
-#define NPAST 30
-#define NFilter 5
-#define M (NFilter-1)/2
 
 //Tipo di funzione
 int Nfunc1;
@@ -74,33 +71,11 @@ double edx;
 double edy;
 double edz;
 
-//valori passati per derivata
-/*double xPast[5];
-double yPast[5];
-double zPast[5];
-double c[3];
-
-
-double timePast[5];
-double lastTime;
-double oldTime;
-double step1, step2;
-int i;
-
-/*da cancellare*/
-/*double xrOld;
-double xrLast;
-
-*/
-double edxCurrent;
-double edyCurrent;
-double edzCurrent;
-
-
-//double dxrf;
+/*
 double dxr3, dxr4, dxr5;
 double dyr3, dyr4, dyr5;
 double dzr3, dzr4, dzr5;
+*/
 
 //velocità filtrate con Thresold
 double dxrT, dyrT, dzrT;
@@ -115,14 +90,7 @@ double dxrUn;
 double dyrUn;
 double dzrUn;
 
-//Funzione di normalizzazione(OpenCV) {non utilizzata}
-void normalize1(Mat mat){
-	if (norm(mat, NORM_L2) != 0){
-		mat = mat / norm(mat, NORM_L2);
-	}
-	else
-		mat = 0.0 * mat;
-}
+
 //Funzione normallizzazione vettori
 void normalize1(double *vett){
 	double norm = sqrt(pow(vett[0], 2) + pow(vett[1], 2) + pow(vett[2], 2));
@@ -142,44 +110,7 @@ void normalize1(double *vett){
 }
 
 
-double Factorial(double nValue)
-{
-	double result = nValue;
-	double result_next;
-	double pc = nValue;
-	do
-	{
-		result_next = result*(pc - 1);
-		result = result_next;
-		pc--;
-	} while (pc>2);
-	nValue = result;
-	return nValue;
-}
-
-double EvaluateBinomialCoefficient(double nValue, double nValue2)
-{
-	double result;
-	if (nValue2 == 1)return nValue;
-	result = (Factorial(nValue)) / (Factorial(nValue2)*Factorial((nValue - nValue2)));
-	nValue2 = result;
-	return nValue2;
-}
-/*
-void DerivativeFilterInitialize()
-{
-	int m = 1;
-	c[0] = 0;
-	c[1] = 1 / 8;
-	c[2] = -1 / 8;
-	for (int k = 1; k < (M + 1); k++)
-	{
-		c[k] = (1 / (pow(2, ((2 * m) + 1))*(EvaluateBinomialCoefficient(2 * m, m - k + 1) - EvaluateBinomialCoefficient(2 * m, m - k - 1));
-	}
-	
-}
-*/
-
+//Roba che inutile ma che c'è
 void initializeVett(double *vett, int lenght){
 	for (int i = 0; i < lenght; i++)
 	{
@@ -240,9 +171,9 @@ Module0::loadParams() {
 
 
 	cumulx = 0,  // reset
-		cumuly = 0,
-		cumulz = 0,
-		cumulyaw = 0;
+	cumuly = 0,
+	cumulz = 0,
+	cumulyaw = 0;
 	pitchOffset = 170;  // pitch offset, manually estimated
 	rollOffset = 0;  // roll offset
 	yawOffset = 0;
@@ -266,23 +197,8 @@ Module0::loadParams() {
 	edx = 0;
 	edy = 0;
 	edz = 0;
-	/*
-	initializeVett(xPast, NFilter);
-	initializeVett(yPast, 5);
-	initializeVett(zPast, 5);
+	
 
-	initializeVett(timePast, NFilter);
-	DerivativeFilterInitialize();
-
-
-	lastTime = 0.1;
-	oldTime = 0.101;
-	step1 = 0.1;
-	step2 = 0.1;
-	xrOld = 0;
-	xrLast = 0;
-	i = 0;
-	*/
 	//Carcamento parametri da file
 	ifstream fs("params2.txt");
 	if (fs.is_open()){
@@ -343,9 +259,6 @@ Module0::initializeDataSaving() {
 
 		fs2 << "dxrT" << "\t" << "dyrT" << "\t" << "dzrT" << "\t";
 		fs2 << "dxrUn" << "\t" << "dyrUn" << "\t" << "dzrUn" << "\t";
-
-		
-		//fs2 << "dxrDerf" << "\t" << "dyrDer" << "\t" << "dzrDer" << "\t";
 
 		fs2 << "dxd\t";
 		fs2 << "dyd\t";
@@ -486,38 +399,7 @@ Module0::DoYourDuty(int wc)
 			R[5] = sin(phi) * cos(theta);
 			R[8] = cos(phi) * cos(theta);
 
-			//PROVA derivata a più punti
-			/*step1 = accum_time - lastTime;
-			step2 = lastTime - oldTime;
-
-			dxr3 = (1 / (step1 + step2))*((step2 / step1)*(xr - xrLast) + (step1 / step2)*(xrLast - xrOld));
-
-			//xrOld  == xr -2
-			//xrLast == xr -1
-			/*xrOld = xrLast;
-			xrLast = xr;
-			oldTime = lastTime;
-			lastTime = accum_time;
-
-			for (int j = NFilter-1; j >0; j--)
-			{
-				xPast[j] = xPast[j - 1];
-				timePast[j] = timePast[j - 1];
-			}
-			xPast[0] = xr;
-			timePast[0] = accum_time;
-			dxrf = (xPast[1] - xPast[3]) / (timePast[1] - timePast[3]);
-			dyrf = (xPast[0] - xPast[4]) / (timePast[0] - timePast[4]);
-
-
-			/*for (int k = 1; k < M+1; k++)
-			{
-				dxrf = dxrf + 2*k*c[k] * (xPast[M - k] - xPast[M + k]) / (timePast[M - k] - timePast[M + k]);
-			}*/
-
 			
-
-
 			//Soglia velocità
 			//thr_vel = 0.08; //0.1 0.08 0.04
 			int i = 0;
@@ -547,14 +429,17 @@ Module0::DoYourDuty(int wc)
 			}
 			else
 				dzrT = dzr;
+
 			//Valore precedente
 			dxrDeb = dxrT;
 			dyrDeb = dyrT;
 			dzrDeb = dzrT;
+
 			//velocità non filtrata
 			dxrUn = dxr;
 			dyrUn = dyr;
 			dzrUn = dzr;
+
 			//Assegnamento velocità reale
 			dxr = dxrT;
 			dyr = dyrT;
@@ -619,8 +504,8 @@ Module0::DoYourDuty(int wc)
 		double Tang[]
 		{
 			-grad1[2] * grad2[1] + grad1[1] * grad2[2],
-				grad1[2] * grad2[0] - grad1[0] * grad2[2],
-				-grad1[1] * grad2[0] + grad1[0] * grad2[1]
+			grad1[2] * grad2[0] - grad1[0] * grad2[2],
+			-grad1[1] * grad2[0] + grad1[0] * grad2[1]
 		};
 
 		//normalizzazione gradienti
