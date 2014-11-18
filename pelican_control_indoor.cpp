@@ -203,9 +203,9 @@ Module0::loadParams() {
 	ifstream fs("params2.txt");
 	if (fs.is_open()){
 		//file format:
-		//1st line: kpx kpy kpz
+		//1st line: kpx kpy kpz kpyaw
 		//2nd line: kix kiy kiz
-		//3rd line: kdx kdy kdz
+		//3rd line: kdx kdy kdz kdyaw
 		//4th line: ktg speed
 		//5th line: gravitycompensation pitchOffset
 		//6th line: ke1 ke2 (always negative)
@@ -213,6 +213,7 @@ Module0::loadParams() {
 		fs >> kpvx;
 		fs >> kpvy;
 		fs >> kpvz;
+		fs >> kpyaw;
 
 		fs >> kivx;
 		fs >> kivy;
@@ -221,6 +222,7 @@ Module0::loadParams() {
 		fs >> kdvx;
 		fs >> kdvy;
 		fs >> kdvz;
+		fs >> kdyaw;
 
 		fs >> ktg;
 		fs >> veld;
@@ -527,7 +529,6 @@ Module0::DoYourDuty(int wc)
 		SumNED[1] *= veld;
 		SumNED[2] *= veld;
 
-
 		dxd = R[0] * SumNED[0] + R[1] * SumNED[1] + R[2] * SumNED[2];
 		dyd = R[3] * SumNED[0] + R[4] * SumNED[1] + R[5] * SumNED[2];
 		dzd = R[6] * SumNED[0] + R[7] * SumNED[1] + R[8] * SumNED[2];
@@ -535,7 +536,7 @@ Module0::DoYourDuty(int wc)
 
 		/*ATTENZIONE!*/
 		//Setup Controllore PID
-		
+
 		dxd = 0;
 		dyd = 0;
 		dzd = 0;
@@ -599,8 +600,7 @@ Module0::DoYourDuty(int wc)
 		//Controllo Yaw (MAI TESTATO)
 		yawd = atan2(y_target - yr, x_target - xr);
 		eyaw = sin(yawd - yawr);
-
-		uy = kpyaw*(eyaw)+kdyaw*(-dyawr);
+		uy = kpyaw*(eyaw) + kdyaw*(-dyawr);
 
 		// thresholds to avoid too fast movements
 		int16_t CTRL_back;
