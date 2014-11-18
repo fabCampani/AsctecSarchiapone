@@ -671,7 +671,7 @@ Module0::DoYourDuty(int wc)
 
 		// thresholds to avoid too fast movements
 		int16_t CTRL_back;
-		int16_t thr3 = 50;
+		int16_t thr3 = 100;		//prima era 50
 		CTRL_back = CTRL_pitch;
 		CTRL_pitch = (int16_t)up;
 
