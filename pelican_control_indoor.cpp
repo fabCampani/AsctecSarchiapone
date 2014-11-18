@@ -278,6 +278,7 @@ Module0::initializeDataSaving() {
 		fs2 << "kpvx\t";
 		fs2 << "kpvy\t";
 		fs2 << "kpvz\t";
+		fs2 << "kpyaw\t";
 
 		fs2 << "kivx\t";
 		fs2 << "kivy\t";
@@ -286,6 +287,7 @@ Module0::initializeDataSaving() {
 		fs2 << "kdvx\t";
 		fs2 << "kdvy\t";
 		fs2 << "kdvz\t";
+		fs2 << "kdyaw\t";
 
 		fs2 << "ktg\t";
 		fs2 << "veld\t";
@@ -536,11 +538,11 @@ Module0::DoYourDuty(int wc)
 
 		/*ATTENZIONE!*/
 		//Setup Controllore PID
-
+		/*
 		dxd = 0;
 		dyd = 0;
 		dzd = 0;
-		
+		*/
 
 		if (landing == 1){
 			dxd = 0;
@@ -677,6 +679,7 @@ Module0::DoYourDuty(int wc)
 		fs2 << kpvx << "\t";
 		fs2 << kpvy << "\t";
 		fs2 << kpvz << "\t";
+		fs2 << kpyaw << "\t";
 
 		fs2 << kivx << "\t";
 		fs2 << kivy << "\t";
@@ -685,6 +688,7 @@ Module0::DoYourDuty(int wc)
 		fs2 << kdvx << "\t";
 		fs2 << kdvy << "\t";
 		fs2 << kdvz << "\t";
+		fs2 << kdyaw << "\t";
 
 		fs2 << ktg << "\t";
 		fs2 << veld << "\t";
