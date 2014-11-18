@@ -61,6 +61,8 @@ extern int landing;
 #define LANDING 95
 
 #define NPAST 30
+#define NFilter 5
+#define M (NFilter-1)/2
 
 //Tipo di funzione
 int Nfunc1;
@@ -73,9 +75,11 @@ double edy;
 double edz;
 
 //valori passati per derivata
-double xPast[5];
+/*double xPast[5];
 double yPast[5];
 double zPast[5];
+double c[3];
+
 
 double timePast[5];
 double lastTime;
@@ -83,24 +87,29 @@ double oldTime;
 double step1, step2;
 int i;
 
+/*da cancellare*/
+/*double xrOld;
+double xrLast;
+
+*/
 double edxCurrent;
 double edyCurrent;
 double edzCurrent;
 
+
+//double dxrf;
 double dxr3, dxr4, dxr5;
 double dyr3, dyr4, dyr5;
 double dzr3, dzr4, dzr5;
 
-
-double xrLast;
-double xrOld;
-
 //velocità filtrate con Thresold
 double dxrT, dyrT, dzrT;
-double thr_vel
+double thr_vel;
 double dxrDeb;
 double dyrDeb;
 double dzrDeb;
+
+
 
 double dxrUn;
 double dyrUn;
@@ -131,6 +140,45 @@ void normalize1(double *vett){
 	}
 
 }
+
+
+double Factorial(double nValue)
+{
+	double result = nValue;
+	double result_next;
+	double pc = nValue;
+	do
+	{
+		result_next = result*(pc - 1);
+		result = result_next;
+		pc--;
+	} while (pc>2);
+	nValue = result;
+	return nValue;
+}
+
+double EvaluateBinomialCoefficient(double nValue, double nValue2)
+{
+	double result;
+	if (nValue2 == 1)return nValue;
+	result = (Factorial(nValue)) / (Factorial(nValue2)*Factorial((nValue - nValue2)));
+	nValue2 = result;
+	return nValue2;
+}
+/*
+void DerivativeFilterInitialize()
+{
+	int m = 1;
+	c[0] = 0;
+	c[1] = 1 / 8;
+	c[2] = -1 / 8;
+	for (int k = 1; k < (M + 1); k++)
+	{
+		c[k] = (1 / (pow(2, ((2 * m) + 1))*(EvaluateBinomialCoefficient(2 * m, m - k + 1) - EvaluateBinomialCoefficient(2 * m, m - k - 1));
+	}
+	
+}
+*/
 
 void initializeVett(double *vett, int lenght){
 	for (int i = 0; i < lenght; i++)
@@ -218,12 +266,15 @@ Module0::loadParams() {
 	edx = 0;
 	edy = 0;
 	edz = 0;
-
-	initializeVett(xPast, 5);
+	/*
+	initializeVett(xPast, NFilter);
 	initializeVett(yPast, 5);
 	initializeVett(zPast, 5);
 
-	initializeVett(timePast, 5);
+	initializeVett(timePast, NFilter);
+	DerivativeFilterInitialize();
+
+
 	lastTime = 0.1;
 	oldTime = 0.101;
 	step1 = 0.1;
@@ -231,7 +282,7 @@ Module0::loadParams() {
 	xrOld = 0;
 	xrLast = 0;
 	i = 0;
-
+	*/
 	//Carcamento parametri da file
 	ifstream fs("params2.txt");
 	if (fs.is_open()){
@@ -293,8 +344,8 @@ Module0::initializeDataSaving() {
 		fs2 << "dxrT" << "\t" << "dyrT" << "\t" << "dzrT" << "\t";
 		fs2 << "dxrUn" << "\t" << "dyrUn" << "\t" << "dzrUn" << "\t";
 
-
-		fs2 << "dxrDer" << "\t" << "dyrDer" << "\t" << "dzrDer" << "\t";
+		
+		//fs2 << "dxrDerf" << "\t" << "dyrDer" << "\t" << "dzrDer" << "\t";
 
 		fs2 << "dxd\t";
 		fs2 << "dyd\t";
@@ -325,8 +376,8 @@ Module0::initializeDataSaving() {
 		fs2 << "veld\t";
 		fs2 << "pitchoff\t";
 		fs2 << "ke1\tke2\t";
-		fs2 << "gravity\n";
-		fs2 << "thr_vel";
+		fs2 << "gravity\t";
+		fs2 << "thr_vel\n";
 
 
 
@@ -436,42 +487,39 @@ Module0::DoYourDuty(int wc)
 			R[8] = cos(phi) * cos(theta);
 
 			//PROVA derivata a più punti
-			step1 = accum_time - lastTime;
+			/*step1 = accum_time - lastTime;
 			step2 = lastTime - oldTime;
 
 			dxr3 = (1 / (step1 + step2))*((step2 / step1)*(xr - xrLast) + (step1 / step2)*(xrLast - xrOld));
 
 			//xrOld  == xr -2
 			//xrLast == xr -1
-			xrOld = xrLast;
+			/*xrOld = xrLast;
 			xrLast = xr;
 			oldTime = lastTime;
 			lastTime = accum_time;
 
-			/*
-			i = (i + 1) % 5;
-			xPasT = xr;
-			yPasT = yr;
-			zPasT = zr;
-			timePasT = accum_time - lastTime;
-			lastTime = accum_time;
+			for (int j = NFilter-1; j >0; j--)
+			{
+				xPast[j] = xPast[j - 1];
+				timePast[j] = timePast[j - 1];
+			}
+			xPast[0] = xr;
+			timePast[0] = accum_time;
+			dxrf = (xPast[1] - xPast[3]) / (timePast[1] - timePast[3]);
+			dyrf = (xPast[0] - xPast[4]) / (timePast[0] - timePast[4]);
 
-			dxr3 = (xPasT - xPast[(5 + i - 2) % 5]) / (timePast[5+i-1]+timePasT);
-			dxr4 = (xPast[(5 + i - 3) % 5] + 3 * xPast[(5 + i - 1)] + 6 * xPast[5 + i - 2] + xPasT)/(6*mtime);
-			dxr5 = (xPast[(5 + i - 4) % 5] - 8 * xPast[(5 + i - 3) % 5] - 8 * xPast[(5 + i - 1)] + xPasT) / (12 * mtime);
 
-			dyr3 = (yPasT - yPast[(5 + i - 2) % 5]) / (timePast[5 + i - 1] + timePasT);
-			dyr4 = (yPast[(5 + i - 3) % 5] + 3 * yPast[(5 + i - 1)] + 6 * yPast[5 + i - 2] + yPasT) / (6 * mtime);
-			dyr5 = (yPast[(5 + i - 4) % 5] - 8 * yPast[(5 + i - 3) % 5] - 8 * yPast[(5 + i - 1)] + yPasT) / (12 * mtime);
+			/*for (int k = 1; k < M+1; k++)
+			{
+				dxrf = dxrf + 2*k*c[k] * (xPast[M - k] - xPast[M + k]) / (timePast[M - k] - timePast[M + k]);
+			}*/
 
-			dyr3 = (zPasT - zPast[(5 + i - 2) % 5]) / (timePast[5 + i - 1] + timePasT);
-			dyr4 = (zPast[(5 + i - 3) % 5] + 3 * zPast[(5 + i - 1)] + 6 * zPast[5 + i - 2] + zPasT) / (6 * mtime);
-			dyr5 = (zPast[(5 + i - 4) % 5] - 8 * zPast[(5 + i - 3) % 5] - 8 * zPast[(5 + i - 1)] + zPasT) / (12 * mtime);
-			*/
+			
 
 
 			//Soglia velocità
-			thr_vel = 0.08; //0.1 0.08 0.04
+			//thr_vel = 0.08; //0.1 0.08 0.04
 			int i = 0;
 
 			if ((dxrDeb - dxr) > thr_vel){
@@ -602,11 +650,11 @@ Module0::DoYourDuty(int wc)
 
 		/*ATTENZIONE!*/
 		//Setup Controllore PID
-		/*
+		
 		dxd = 0;
 		dyd = 0;
 		dzd = 0;
-		*/
+		
 
 		if (landing == 1){
 			dxd = 0;
@@ -731,9 +779,8 @@ Module0::DoYourDuty(int wc)
 
 		fs2 << dxrT << "\t" << dyrT << "\t" << dzrT << "\t";
 		fs2 << dxrUn << "\t" << dyrUn << "\t" << dzrUn << "\t";
-
-		fs2 << dxr3 << "\t" << dyr3 << "\t" << dzr3 << "\t";
 		/*
+		fs2 << dxrf << "\t" << dyrf << "\t" << dzr3 << "\t";
 		fs2 << dxr4 << "\t" << dyr4 << "\t" << dzr4 << "\t";
 		fs2 << dxr5 << "\t" << dyr5 << "\t" << dzr5 << "\t";
 		*/
@@ -789,6 +836,9 @@ Module0::DoYourDuty(int wc)
 
 
 }
+
+
+
 
 void
 Module0::Close()
