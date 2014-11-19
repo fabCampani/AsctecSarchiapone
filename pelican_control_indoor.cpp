@@ -90,6 +90,7 @@ double dxrUn;
 double dyrUn;
 double dzrUn;
 
+double Tanx, Tany, Tanz;
 
 //Funzione normallizzazione vettori
 void normalize1(double *vett){
@@ -265,6 +266,14 @@ Module0::initializeDataSaving() {
 		fs2 << "dxd\t";
 		fs2 << "dyd\t";
 		fs2 << "dzd\t";
+
+		fs2 << "Perpx\t";
+		fs2 << "Tangx\t";
+		fs2 << "Perpy\t";
+		fs2 << "Tangy\t";
+		fs2 << "Perpz\t";
+		fs2 << "Tanz\t";
+
 		//fs2 << "dxNED\t";
 		//fs2 << "dyNED\t";
 		//fs2 << "dzNED\t";
@@ -444,11 +453,11 @@ Module0::DoYourDuty(int wc)
 			dyrUn = dyr;
 			dzrUn = dzr;
 
-			//Assegnamento velocità reale
+			//Assegnamento velocità reale (ORA NED)
 			dxr = dxrT;
 			dyr = dyrT;
 			dzr = dzrT;
-
+			/*
 			double dxr1 = R[0] * dxr + R[1] * dyr + R[2] * dzr;
 			double dyr1 = R[3] * dxr + R[4] * dyr + R[5] * dzr;
 			double dzr1 = R[6] * dxr + R[7] * dyr + R[8] * dzr;
@@ -456,6 +465,7 @@ Module0::DoYourDuty(int wc)
 			dxr = dxr1;
 			dyr = dyr1;
 			dzr = dzr1;
+			*/
 		}
 	}
 	RemoveCurrentMsg();
@@ -531,10 +541,15 @@ Module0::DoYourDuty(int wc)
 		SumNED[1] *= veld;
 		SumNED[2] *= veld;
 
+		dxd = SumNED[0];
+		dyd = SumNED[1];
+		dzd = SumNED[2];
+
+		/*
 		dxd = R[0] * SumNED[0] + R[1] * SumNED[1] + R[2] * SumNED[2];
 		dyd = R[3] * SumNED[0] + R[4] * SumNED[1] + R[5] * SumNED[2];
 		dzd = R[6] * SumNED[0] + R[7] * SumNED[1] + R[8] * SumNED[2];
-
+		*/
 
 		/*ATTENZIONE!*/
 		//Setup Controllore PID
@@ -554,12 +569,19 @@ Module0::DoYourDuty(int wc)
 		edy = dyd - dyr;
 		edz = dzd - dzr;
 
+		double dxr1 = R[0] * edx + R[1] * edy + R[2] * edz;
+		double dyr1 = R[3] * edx + R[4] * edy + R[5] * edz;
+		double dzr1 = R[6] * edx + R[7] * edy + R[8] * edz;
 
+		edx = dxr1;
+		edy = dyr1;
+		edz = dzr1;
+		
 		cumulx = cumulx + edx*mtime;
 		cumuly = cumuly + edy*mtime;
 		cumulz = cumulz + edz*mtime;
 
-		//Derivativo:
+		//Derivativo: (NON VA FATTO così)
 		dedx = (edx - edxback) / mtime;
 		dedy = (edy - edyback) / mtime;
 		dedz = (edz - edzback) / mtime;
@@ -674,6 +696,10 @@ Module0::DoYourDuty(int wc)
 
 		fs2 << dxd << "\t" << dyd << "\t" << dzd << "\t";
 		//fs2 << dxrDeb << "\t" << dyrDeb << "\t" << dzrDeb << "\t";
+		fs2 << Perpx << "\t" << Tanx << "\t";
+		fs2 << Perpy << "\t" << Tany << "\t";
+		fs2 << Perpz << "\t" << Tanz << "\t";
+
 		fs2 << theta << "\t" << phi << "\t" << yawr << "\t";
 		fs2 << yawd << "\t" << eyaw << "\t";
 		fs2 << kpvx << "\t";
