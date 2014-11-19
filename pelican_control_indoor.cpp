@@ -109,6 +109,9 @@ void normalize1(double *vett){
 	}
 
 }
+double norma(double *vett){
+	return sqrt(pow(vett[0], 2) + pow(vett[1], 2) + pow(vett[2], 2));
+}
 
 
 //Roba che inutile ma che c'è
@@ -534,6 +537,28 @@ Module0::DoYourDuty(int wc)
 			e1*grad1[1] + e2*grad2[1] + ktg*Tang[1],
 			e1*grad1[2] + e2*grad2[2] + ktg*Tang[2],
 		};
+
+		double normSumNED = norma(SumNED);
+		if (normSudNED != 0)
+		{
+			Tangx = ktg*Tang[0] / norma;
+			Tangy = ktg*Tang[1] / norma;
+			Tangz = ktg*Tang[2] / norma;
+
+			Perpx = (e1*grad1[0] + e2*grad2[0]) / normSumNED;
+			Perpy = (e1*grad1[1] + e2*grad2[1]) / normSumNED;
+			Perpz = (e1*grad1[2] + e2*grad2[2]) / normSumNED;
+		}
+		else
+		{
+			Tangx = 0;
+			Tangy = 0;
+			Tangz = 0;
+
+			Perpx = 0;
+			Perpy = 0;
+			Perpz = 0;
+		}
 
 		normalize1(SumNED);
 
