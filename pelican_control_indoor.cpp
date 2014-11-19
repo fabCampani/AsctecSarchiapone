@@ -90,7 +90,8 @@ double dxrUn;
 double dyrUn;
 double dzrUn;
 
-double Tanx, Tany, Tanz;
+double Tangx, Tangy, Tangz;
+double Perpx, Perpy, Perpz;
 
 //Funzione normallizzazione vettori
 void normalize1(double *vett){
@@ -539,15 +540,15 @@ Module0::DoYourDuty(int wc)
 		};
 
 		double normSumNED = norma(SumNED);
-		if (normSudNED != 0)
+		if (normSumNED != 0)
 		{
-			Tangx = ktg*Tang[0] / norma;
-			Tangy = ktg*Tang[1] / norma;
-			Tangz = ktg*Tang[2] / norma;
+			Tangx = ktg*Tang[0] * veld / normSumNED;
+			Tangy = ktg*Tang[1] * veld / normSumNED;
+			Tangz = ktg*Tang[2] * veld / normSumNED;
 
-			Perpx = (e1*grad1[0] + e2*grad2[0]) / normSumNED;
-			Perpy = (e1*grad1[1] + e2*grad2[1]) / normSumNED;
-			Perpz = (e1*grad1[2] + e2*grad2[2]) / normSumNED;
+			Perpx = (e1*grad1[0] + e2*grad2[0]) * veld / normSumNED;
+			Perpy = (e1*grad1[1] + e2*grad2[1]) * veld / normSumNED;
+			Perpz = (e1*grad1[2] + e2*grad2[2]) * veld / normSumNED;
 		}
 		else
 		{
@@ -697,63 +698,64 @@ Module0::DoYourDuty(int wc)
 	}
 
 	// data saving
-	ofstream fs2("dataasctec.txt", std::ofstream::out | std::ofstream::app);
+	if (initialize == 1){
+		ofstream fs2("dataasctec.txt", std::ofstream::out | std::ofstream::app);
 
-	if (fs2.is_open()){
-		fs2 << accum_time << "\t";
-		fs2 << e1 << "\t" << e2 << "\t";
-		fs2 << CTRL_pitch << "\t" << CTRL_roll << "\t" << CTRL_thrust << "\t" << CTRL_yaw << "\t";
-		//fs2 << longitude << "\t" << latitude << "\t" << height << "\t";
-		//fs2 << fus_longitude << "\t" << fus_latitude << "\t" << fus_height << "\t";
-		//fs2 << GPS_heading << "\t" << position_accuracy << "\t" << height_accuracy << "\t" << GPS_num << "\t" << GPS_status << "\t";
-		fs2 << edx << "\t" << edy << "\t" << edz << "\t";
-		fs2 << cumulx << "\t" << cumuly << "\t" << cumulz << "\t";
-		fs2 << xr << "\t" << yr << "\t" << zr << "\t";
-		fs2 << dxr << "\t" << dyr << "\t" << dzr << "\t";
+		if (fs2.is_open()){
+			fs2 << accum_time << "\t";
+			fs2 << e1 << "\t" << e2 << "\t";
+			fs2 << CTRL_pitch << "\t" << CTRL_roll << "\t" << CTRL_thrust << "\t" << CTRL_yaw << "\t";
+			//fs2 << longitude << "\t" << latitude << "\t" << height << "\t";
+			//fs2 << fus_longitude << "\t" << fus_latitude << "\t" << fus_height << "\t";
+			//fs2 << GPS_heading << "\t" << position_accuracy << "\t" << height_accuracy << "\t" << GPS_num << "\t" << GPS_status << "\t";
+			fs2 << edx << "\t" << edy << "\t" << edz << "\t";
+			fs2 << cumulx << "\t" << cumuly << "\t" << cumulz << "\t";
+			fs2 << xr << "\t" << yr << "\t" << zr << "\t";
+			fs2 << dxr << "\t" << dyr << "\t" << dzr << "\t";
 
-		fs2 << dxrT << "\t" << dyrT << "\t" << dzrT << "\t";
-		fs2 << dxrUn << "\t" << dyrUn << "\t" << dzrUn << "\t";
-		/*
-		fs2 << dxrf << "\t" << dyrf << "\t" << dzr3 << "\t";
-		fs2 << dxr4 << "\t" << dyr4 << "\t" << dzr4 << "\t";
-		fs2 << dxr5 << "\t" << dyr5 << "\t" << dzr5 << "\t";
-		*/
+			fs2 << dxrT << "\t" << dyrT << "\t" << dzrT << "\t";
+			fs2 << dxrUn << "\t" << dyrUn << "\t" << dzrUn << "\t";
+			/*
+			fs2 << dxrf << "\t" << dyrf << "\t" << dzr3 << "\t";
+			fs2 << dxr4 << "\t" << dyr4 << "\t" << dzr4 << "\t";
+			fs2 << dxr5 << "\t" << dyr5 << "\t" << dzr5 << "\t";
+			*/
 
-		fs2 << dxd << "\t" << dyd << "\t" << dzd << "\t";
-		//fs2 << dxrDeb << "\t" << dyrDeb << "\t" << dzrDeb << "\t";
-		fs2 << Perpx << "\t" << Tanx << "\t";
-		fs2 << Perpy << "\t" << Tany << "\t";
-		fs2 << Perpz << "\t" << Tanz << "\t";
+			fs2 << dxd << "\t" << dyd << "\t" << dzd << "\t";
+			//fs2 << dxrDeb << "\t" << dyrDeb << "\t" << dzrDeb << "\t";
+			fs2 << Perpx << "\t" << Tangx << "\t";
+			fs2 << Perpy << "\t" << Tangy << "\t";
+			fs2 << Perpz << "\t" << Tangz << "\t";
 
-		fs2 << theta << "\t" << phi << "\t" << yawr << "\t";
-		fs2 << yawd << "\t" << eyaw << "\t";
-		fs2 << kpvx << "\t";
-		fs2 << kpvy << "\t";
-		fs2 << kpvz << "\t";
-		fs2 << kpyaw << "\t";
+			fs2 << theta << "\t" << phi << "\t" << yawr << "\t";
+			fs2 << yawd << "\t" << eyaw << "\t";
+			fs2 << kpvx << "\t";
+			fs2 << kpvy << "\t";
+			fs2 << kpvz << "\t";
+			fs2 << kpyaw << "\t";
 
-		fs2 << kivx << "\t";
-		fs2 << kivy << "\t";
-		fs2 << kivz << "\t";
+			fs2 << kivx << "\t";
+			fs2 << kivy << "\t";
+			fs2 << kivz << "\t";
 
-		fs2 << kdvx << "\t";
-		fs2 << kdvy << "\t";
-		fs2 << kdvz << "\t";
-		fs2 << kdyaw << "\t";
+			fs2 << kdvx << "\t";
+			fs2 << kdvy << "\t";
+			fs2 << kdvz << "\t";
+			fs2 << kdyaw << "\t";
 
-		fs2 << ktg << "\t";
-		fs2 << veld << "\t";
-		fs2 << pitchOffset << "\t";
-		fs2 << ke1 << "\t" << ke2 << "\t";
-		fs2 << gravity << "\t";
-		fs2 << thr_vel;
-		fs2 << "\n";
+			fs2 << ktg << "\t";
+			fs2 << veld << "\t";
+			fs2 << pitchOffset << "\t";
+			fs2 << ke1 << "\t" << ke2 << "\t";
+			fs2 << gravity << "\t";
+			fs2 << thr_vel;
+			fs2 << "\n";
 
+		}
+		else {
+			cerr << "File not open!" << endl;
+		}
 	}
-	else {
-		cerr << "File not open!" << endl;
-	}
-
 	// terminal visualization (debug)
 
 	if ((printTimeCounter == printstep)){
