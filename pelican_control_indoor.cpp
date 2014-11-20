@@ -195,9 +195,21 @@ Module0::loadParams() {
 	x_target = 0;
 	y_target = 0;
 
-	//funzioni
-	Nfunc1 = CIRCLE;
-	Nfunc2 = PLANE;
+	//Inizializzazione funzioni
+	/*
+	funzioni a disposizione
+	CIRCLE_XY	0
+	CIRCLE_YZ	1 
+	CIRCLE_XZ	2
+	PLANE_Z		3
+	PLANE_Y		4
+	PLANE_X		5
+	PLANE_GEN	6
+	ELLIPSE		7
+	SPHERE		8
+	*/
+	Nfunc1 = CIRCLE_XY;
+	Nfunc2 = PLANE_Z;
 
 	edx = 0;
 	edy = 0;
@@ -238,6 +250,16 @@ Module0::loadParams() {
 		fs >> ke2;
 
 		fs >> thr_vel;
+	}
+
+	//Carcamento Funzioni da file
+	ifstream fs3("functions.txt");
+	if (fs3.is_open()){
+		//file format:
+		//funzione 1 funzione2
+		//spiegazione funzioni disponibili
+		fs3 >> Nfunc1;
+		fs3 >> Nfunc2;
 	}
 }
 
