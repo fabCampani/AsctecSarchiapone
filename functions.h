@@ -15,7 +15,7 @@
 double circleXY_radius = 0.4;
 double circleXY_center_x = -2;
 double circleXY_center_y = -0.2;
-double circleXY_center_z = 0;
+
 
 double functionCircleXY(double x, double y, double z)
 {
@@ -29,7 +29,6 @@ void fgradCircleXY(double *res, double x, double y, double z){
 
 ///CODICE CERCHIO YZ
 double circleYZ_radius = 0.4;
-double circleYZ_center_x = -2;
 double circleYZ_center_y = -0.2;
 double circleYZ_center_z = 0;
 
@@ -46,7 +45,6 @@ void fgradCircleYZ(double *res, double x, double y, double z){
 ///CODICE CERCHIO XZ
 double circleXZ_radius = 0.4;
 double circleXZ_center_x = -2;
-double circleXZ_center_y = -0.2;
 double circleXZ_center_z = 0;
 
 double functionCircleXZ(double x, double y, double z)
@@ -64,7 +62,7 @@ void fgradCircleXZ(double *res, double x, double y, double z){
 double offset_plane_z = 0;
 double functionPlaneZ(double x, double y, double z)
 {
-	return (z + offset_plane_z);
+	return (z - offset_plane_z);
 }
 void fgradPlaneZ(double *res, double x, double y, double z){
 	res[0] = 0;
@@ -76,7 +74,7 @@ void fgradPlaneZ(double *res, double x, double y, double z){
 double offset_plane_y = 0;
 double functionPlaneY(double x, double y, double z)
 {
-	return (y + offset_plane_y);
+	return (y - offset_plane_y);
 }
 void fgradPlaneY(double *res, double x, double y, double z){
 	res[0] = 0;
@@ -85,10 +83,10 @@ void fgradPlaneY(double *res, double x, double y, double z){
 }
 
 ///CODICE PIANO X=0
-double offset_plane_x = 0;
+double offset_plane_x = -2.0;
 double functionPlaneX(double x, double y, double z)
 {
-	return (x + offset_plane_x);
+	return (x - offset_plane_x);
 }
 void fgradPlaneX(double *res, double x, double y, double z){
 	res[0] = 1;
@@ -117,11 +115,11 @@ void fgradPlaneGen(double *res, double x, double y, double z){
 
 
 //CODICE ELLISSE
-double a = 0.5;	//Semi-major axis
-double b = 1;	//Semi-minor axis
+double a = 1;	//Semi-axis X
+double b = 0.6;	//Semi-axis Y
 
-double ellipse_center_x = -2;
-double ellipse_center_y = -0.5;
+double ellipse_center_x = -0.5;
+double ellipse_center_y = -2.25;
 
 double functionEllipse(double x, double y, double z)
 {
@@ -138,7 +136,7 @@ void fgradEllipse(double *res, double x, double y, double z)
 //CODICE SFERA
 double sphere_center_x = -2;
 double sphere_center_y = -0.5;
-double sphere_center_z = -0.5;
+double sphere_center_z = -0;
 double sphere_radius = 0.4;
 
 double functionSphere(double x, double y, double z)
