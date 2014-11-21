@@ -55,6 +55,10 @@ extern int initialize;
 extern int ended;
 extern int height;
 extern int landing;
+
+extern int16_t acc_x;
+extern int16_t acc_y;
+extern int16_t acc_z;
 //////////////////////
 
 
@@ -300,6 +304,8 @@ Module0::initializeDataSaving() {
 		fs2 << "Perpz\t";
 		fs2 << "Tanz\t";
 
+		fs2 << "ax\tay\taz\t";
+
 		//fs2 << "dxNED\t";
 		//fs2 << "dyNED\t";
 		//fs2 << "dzNED\t";
@@ -388,6 +394,10 @@ Module0::DoYourDuty(int wc)
 	theta = 0.001 * (double)angle_pitch *M_PI / 180.0;  // Radiants
 	phi = 0.001 * (double)angle_roll *M_PI / 180.0;    // Radiants
 	psi = 0.001 * (double)angle_yaw *M_PI / 180.0;  // Radiants -> ?
+
+	double ax = acc_x*9.81 / 10000;
+	double ay = acc_y*9.81 / 10000;
+	double az = acc_z*9.81 / 10000;
 
 	//Calcolo della matrice di rotazione ogni volta:
 	R[0] = cos(theta) * cos(yawr);
@@ -630,17 +640,22 @@ Module0::DoYourDuty(int wc)
 		cumulz = cumulz + edz*mtime;
 
 		//Derivativo: (NON VA FATTO così)
+		/*
 		dedx = (edx - edxback) / mtime;
 		dedy = (edy - edyback) / mtime;
 		dedz = (edz - edzback) / mtime;
-
 		edxback = edx;
 		edyback = edy;
 		edzback = edz;
+		*/
 
-		up = pitchOffset + kpvx*(edx)+kivx*(cumulx)+kdvx*(dedx); // pitch command
+		dedx = -ax;
+		dedy = -ay;
+		dedz = -az;
 
-		ur = rollOffset + kpvy*(edy)+kivy*(cumuly)+kdvy*(dedy); // roll command
+		up = pitchOffset + kpvx*(edx)+ kivx*(cumulx)+ kdvx*(dedx); // pitch command
+
+		ur = rollOffset + kpvy*(edy)+ kivy*(cumuly)+ kdvy*(dedy); // roll command
 
 		//Procedura di ATTERRAGGIO (non ancora testata)
 
@@ -748,6 +763,8 @@ Module0::DoYourDuty(int wc)
 			fs2 << Perpx << "\t" << Tangx << "\t";
 			fs2 << Perpy << "\t" << Tangy << "\t";
 			fs2 << Perpz << "\t" << Tangz << "\t";
+
+			fs2 << ax << "\t" << ay << "\t" << az << "\t";
 
 			fs2 << theta << "\t" << phi << "\t" << yawr << "\t";
 			fs2 << yawd << "\t" << eyaw << "\t";
