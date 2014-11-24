@@ -97,6 +97,8 @@ double dzrUn;
 double Tangx, Tangy, Tangz;
 double Perpx, Perpy, Perpz;
 
+double kpvxMod, kpvyMod;
+
 //Funzione normallizzazione vettori
 void normalize1(double *vett){
 	double norm = sqrt(pow(vett[0], 2) + pow(vett[1], 2) + pow(vett[2], 2));
@@ -304,6 +306,8 @@ Module0::initializeDataSaving() {
 		fs2 << "Perpz\t";
 		fs2 << "Tanz\t";
 
+		fs2 << "kpvxMod\tkpvyMod\t";
+
 		fs2 << "ax\tay\taz\t";
 
 		//fs2 << "dxNED\t";
@@ -428,6 +432,10 @@ Module0::DoYourDuty(int wc)
 		}
 		else if (rxMsg->ReadType() == 3)
 		{
+			ax = 0;
+			ay = 0;
+			az = 0;
+
 			xr = *((double*)rxMsg->ReadData());
 			yr = *((double*)((char*)(rxMsg->ReadData()) + sizeof(double)));
 			zr = *((double*)((char*)(rxMsg->ReadData()) + 2 * sizeof(double)));
@@ -449,7 +457,7 @@ Module0::DoYourDuty(int wc)
 			R[8] = cos(phi) * cos(theta);
 
 			
-			//Soglia velocità
+			//Soglia velocità (filtro rumore)
 			//thr_vel = 0.08; //0.1 0.08 0.04
 			int i = 0;
 
@@ -493,7 +501,8 @@ Module0::DoYourDuty(int wc)
 			dxr = dxrT;
 			dyr = dyrT;
 			dzr = dzrT;
-			/*
+			
+			//NED -> drone
 			double dxr1 = R[0] * dxr + R[1] * dyr + R[2] * dzr;
 			double dyr1 = R[3] * dxr + R[4] * dyr + R[5] * dzr;
 			double dzr1 = R[6] * dxr + R[7] * dyr + R[8] * dzr;
@@ -501,10 +510,15 @@ Module0::DoYourDuty(int wc)
 			dxr = dxr1;
 			dyr = dyr1;
 			dzr = dzr1;
-			*/
+			
 		}
 	}
 	RemoveCurrentMsg();
+
+	//Previsione velocità (NEW)
+	double delay = 1;
+	dxr += ax*mtime*delay;
+	dyr += ay*mtime*delay;
 
 	// time calculation
 	gettimeofday(&endtime2, NULL);
@@ -603,11 +617,11 @@ Module0::DoYourDuty(int wc)
 		dyd = SumNED[1];
 		dzd = SumNED[2];
 
-		/*
+		//NED -> drone
 		dxd = R[0] * SumNED[0] + R[1] * SumNED[1] + R[2] * SumNED[2];
 		dyd = R[3] * SumNED[0] + R[4] * SumNED[1] + R[5] * SumNED[2];
 		dzd = R[6] * SumNED[0] + R[7] * SumNED[1] + R[8] * SumNED[2];
-		*/
+		
 
 		/*ATTENZIONE!*/
 		//Setup Controllore PID
@@ -626,7 +640,7 @@ Module0::DoYourDuty(int wc)
 		edx = dxd - dxr;
 		edy = dyd - dyr;
 		edz = dzd - dzr;
-
+		/*
 		double dxr1 = R[0] * edx + R[1] * edy + R[2] * edz;
 		double dyr1 = R[3] * edx + R[4] * edy + R[5] * edz;
 		double dzr1 = R[6] * edx + R[7] * edy + R[8] * edz;
@@ -634,6 +648,7 @@ Module0::DoYourDuty(int wc)
 		edx = dxr1;
 		edy = dyr1;
 		edz = dzr1;
+		*/
 		
 		cumulx = cumulx + edx*mtime;
 		cumuly = cumuly + edy*mtime;
@@ -652,6 +667,9 @@ Module0::DoYourDuty(int wc)
 		dedx = -ax;
 		dedy = -ay;
 		dedz = -az;
+
+		kpvxMod = kpvx * abs(edx)/vel_d;
+		kpvyMod = kpvy * abs(edy)/vel_d;
 
 		up = pitchOffset + kpvx*(edx)+ kivx*(cumulx)+ kdvx*(dedx); // pitch command
 
@@ -691,7 +709,7 @@ Module0::DoYourDuty(int wc)
 
 		// thresholds to avoid too fast movements
 		int16_t CTRL_back;
-		int16_t thr3 = 100;		//prima era 50
+		int16_t thr3 = 50;		//prima era 50
 		CTRL_back = CTRL_pitch;
 		CTRL_pitch = (int16_t)up;
 
@@ -763,6 +781,7 @@ Module0::DoYourDuty(int wc)
 			fs2 << Perpx << "\t" << Tangx << "\t";
 			fs2 << Perpy << "\t" << Tangy << "\t";
 			fs2 << Perpz << "\t" << Tangz << "\t";
+			fs2 << kpvxMod << "\t" << kpvyMod << "\t";
 
 			fs2 << ax << "\t" << ay << "\t" << az << "\t";
 
