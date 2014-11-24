@@ -306,7 +306,7 @@ Module0::initializeDataSaving() {
 		fs2 << "Perpz\t";
 		fs2 << "Tanz\t";
 
-		fs2 << "kpvxMod\tkpvyMod\t";
+		//fs2 << "kpvxMod\tkpvyMod\t";
 
 		fs2 << "ax\tay\taz\t";
 
@@ -399,9 +399,12 @@ Module0::DoYourDuty(int wc)
 	phi = 0.001 * (double)angle_roll *M_PI / 180.0;    // Radiants
 	psi = 0.001 * (double)angle_yaw *M_PI / 180.0;  // Radiants -> ?
 
-	double ax = acc_x*9.81 / 10000;
-	double ay = acc_y*9.81 / 10000;
-	double az = acc_z*9.81 / 10000;
+
+	//Calcolo delle accelerazioni
+	double T = (ut * 9.81 / gravity);
+	double ax = T * sin(-theta);
+	double ay = T * sin (phi);
+	double az = T; //Ma anche no
 
 	//Calcolo della matrice di rotazione ogni volta:
 	R[0] = cos(theta) * cos(yawr);
@@ -432,10 +435,11 @@ Module0::DoYourDuty(int wc)
 		}
 		else if (rxMsg->ReadType() == 3)
 		{
+			/*
 			ax = 0;
 			ay = 0;
 			az = 0;
-
+			*/
 			xr = *((double*)rxMsg->ReadData());
 			yr = *((double*)((char*)(rxMsg->ReadData()) + sizeof(double)));
 			zr = *((double*)((char*)(rxMsg->ReadData()) + 2 * sizeof(double)));
@@ -516,10 +520,11 @@ Module0::DoYourDuty(int wc)
 	RemoveCurrentMsg();
 
 	//Previsione velocità (NEW)
+	/*
 	double delay = 1;
 	dxr += ax*mtime*delay;
 	dyr += ay*mtime*delay;
-
+	*/
 	// time calculation
 	gettimeofday(&endtime2, NULL);
 	secc = endtime2.tv_sec - starttime2.tv_sec;
@@ -668,12 +673,14 @@ Module0::DoYourDuty(int wc)
 		dedy = -ay;
 		dedz = -az;
 
-		kpvxMod = kpvx * abs(edx)/vel_d;
-		kpvyMod = kpvy * abs(edy)/vel_d;
+		/*
+		kpvxMod = kpvx * abs(edx);
+		kpvyMod = kpvy * abs(edy);
+		*/
 
-		up = pitchOffset + kpvx*(edx)+ kivx*(cumulx)+ kdvx*(dedx); // pitch command
+		up = pitchOffset + kpvx*(edx) + kivx*(cumulx) + kdvx*(dedx); // pitch command
 
-		ur = rollOffset + kpvy*(edy)+ kivy*(cumuly)+ kdvy*(dedy); // roll command
+		ur = rollOffset + kpvy*(edy) + kivy*(cumuly) + kdvy*(dedy); // roll command
 
 		//Procedura di ATTERRAGGIO (non ancora testata)
 
@@ -696,7 +703,7 @@ Module0::DoYourDuty(int wc)
 
 		}
 		else
-			ut = gravity + kpvz*(edz)+kivz*(cumulz)+kdvz*(dedz); // thrust command calculation
+			ut = gravity + kpvz*(edz) + kivz*(cumulz) + kdvz*(dedz); // thrust command calculation
 
 		if (ut < 1700){
 			ut = 1700;
@@ -781,7 +788,7 @@ Module0::DoYourDuty(int wc)
 			fs2 << Perpx << "\t" << Tangx << "\t";
 			fs2 << Perpy << "\t" << Tangy << "\t";
 			fs2 << Perpz << "\t" << Tangz << "\t";
-			fs2 << kpvxMod << "\t" << kpvyMod << "\t";
+			//fs2 << kpvxMod << "\t" << kpvyMod << "\t";
 
 			fs2 << ax << "\t" << ay << "\t" << az << "\t";
 

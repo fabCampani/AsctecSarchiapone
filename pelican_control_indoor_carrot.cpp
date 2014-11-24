@@ -7,17 +7,6 @@
  
  **/
 
-#define n_accx  0.0080653 // *10
-#define n_accy  0.0076799 // *10
-#define n_accz  0.043222 // *100
-#define n_posx  0.00000019239
-#define n_posy  0.0000040953
-#define n_posz  0.0000042075
-#define n_velx  0.000041904
-#define n_vely  0.00072175
-#define n_velz  0.00087454
-#define n_bias  0.001 
-
 // definitions for the error (and therefore speed) limitation
 #define ex_thr 2.5
 #define ey_thr 2.5
@@ -54,63 +43,6 @@ using namespace cv;
 
 struct timeval starttime2, endtime2;  // variables for the timing estimation
 
-/*
-double dt = 0.035;
-int gps_flag = 0;
-
-float A_mat[9][9] = { { 1, dt, -(dt*dt) / 2, 0, 0, 0, 0, 0, 0 },
-{ 0, 1, -dt, 0, 0, 0, 0, 0, 0 },
-{ 0, 0, 1, 0, 0, 0, 0, 0, 0 },
-{ 0, 0, 0, 1, dt, -(dt*dt) / 2, 0, 0, 0 },
-{ 0, 0, 0, 0, 1, -dt, 0, 0, 0 },
-{ 0, 0, 0, 0, 0, 1, 0, 0, 0 },
-{ 0, 0, 0, 0, 0, 0, 1, dt, -(dt*dt) / 2 },
-{ 0, 0, 0, 0, 0, 0, 0, 1, -dt },
-{ 0, 0, 0, 0, 0, 0, 0, 0, 1 } };
-
-float Q_mat[9][9] = { { n_accx*(dt*dt*dt*dt) / 4, n_accx*(dt*dt*dt) / 2, n_accx*(dt*dt) / 2, 0, 0, 0, 0, 0, 0 },
-{ n_accx*(dt*dt*dt) / 2, n_accx*(dt*dt), n_accx*dt, 0, 0, 0, 0, 0, 0 },
-{ n_accx*(dt*dt) / 2, n_accx*dt, n_accx, 0, 0, 0, 0, 0, 0 },
-{ 0, 0, 0, n_accy*(dt*dt*dt*dt) / 4, n_accy*(dt*dt*dt) / 2, n_accy*(dt*dt) / 2, 0, 0, 0 },
-{ 0, 0, 0, n_accy*(dt*dt*dt) / 2, n_accy*(dt*dt), n_accy*dt, 0, 0, 0 },
-{ 0, 0, 0, n_accy*(dt*dt) / 2, n_accy*dt, n_accy, 0, 0, 0 },
-{ 0, 0, 0, 0, 0, 0, n_accz*(dt*dt*dt*dt) / 4, n_accz*(dt*dt*dt) / 2, n_accz*(dt*dt) / 2 },
-{ 0, 0, 0, 0, 0, 0, n_accz*(dt*dt*dt) / 2, n_accz*(dt*dt), n_accz*dt },
-{ 0, 0, 0, 0, 0, 0, n_accz*(dt*dt) / 2, n_accz*dt, n_accz } };
-
-
-float B_mat[9][3] = { { (dt*dt) / 2, 0, 0 },
-{ dt, 0, 0 },
-{ 1, 0, 0 },
-{ 0, (dt*dt) / 2, 0 },
-{ 0, dt, 0 },
-{ 0, 1, 0 },
-{ 0, 0, (dt*dt) / 2 },
-{ 0, 0, dt },
-{ 0, 0, 1 } };
-
-float R_mat[9][9] = { { n_posx, 0, 0, 0, 0, 0, 0, 0, 0 },
-{ 0, n_velx, 0, 0, 0, 0, 0, 0, 0 },
-{ 0, 0, n_bias, 0, 0, 0, 0, 0, 0 },
-{ 0, 0, 0, n_posy, 0, 0, 0, 0, 0 },
-{ 0, 0, 0, 0, n_vely, 0, 0, 0, 0 },
-{ 0, 0, 0, 0, 0, n_bias, 0, 0, 0 },
-{ 0, 0, 0, 0, 0, 0, n_posz, 0, 0 },
-{ 0, 0, 0, 0, 0, 0, 0, n_velz, 0 },
-{ 0, 0, 0, 0, 0, 0, 0, 0, n_bias } };
-
-cv::Mat Aa(9, 9, CV_32F, A_mat);
-cv::Mat Aq(9, 9, CV_32F, Q_mat);
-cv::Mat Ab(9, 3, CV_32F, B_mat);
-cv::Mat Ah = Mat::eye(9, 9, CV_32F);
-cv::Mat Ar(9, 9, CV_32F, R_mat);
-cv::Mat Ap = Mat::zeros(9, 9, CV_32F);
-cv::Mat Au(3, 1, CV_32F);
-cv::Mat Ax(9, 1, CV_32F);
-cv::Mat Ak = Mat::zeros(9, 9, CV_32F);
-cv::Mat Ay(9, 1, CV_32F);
-*/
-
 ///GLOBAL VARIABLES (defined in module2.cpp). VARIABLES AND COMMAND FROM AND TO THE ROBOT (Serial Interface)
 extern int16_t CTRL_pitch;
 extern int16_t CTRL_roll;
@@ -143,6 +75,10 @@ int Nfunc2;
 double dxC;
 double dyC;
 double dzC;
+
+double dzrDeb, dzrDeb, dzrDeb;
+double thr_vel;
+
 //Errori
 double ex;
 double ey;
@@ -150,6 +86,8 @@ double ez;
 //passo soglia
 double step;
 bool prima;
+
+
 
 
 
@@ -171,47 +109,6 @@ void normalize1(double *vett){
 
 }
 
-/*/
-void updateMatrices(){
-	float A_mat[9][9] = { { 1, dt, -(dt*dt) / 2, 0, 0, 0, 0, 0, 0 },
-	{ 0, 1, -dt, 0, 0, 0, 0, 0, 0 },
-	{ 0, 0, 1, 0, 0, 0, 0, 0, 0 },
-	{ 0, 0, 0, 1, dt, -(dt*dt) / 2, 0, 0, 0 },
-	{ 0, 0, 0, 0, 1, -dt, 0, 0, 0 },
-	{ 0, 0, 0, 0, 0, 1, 0, 0, 0 },
-	{ 0, 0, 0, 0, 0, 0, 1, dt, -(dt*dt) / 2 },
-	{ 0, 0, 0, 0, 0, 0, 0, 1, -dt },
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 1 } };
-
-	float Q_mat[9][9] = { { n_accx*(dt*dt*dt*dt) / 4, n_accx*(dt*dt*dt) / 2, n_accx*(dt*dt) / 2, 0, 0, 0, 0, 0, 0 },
-	{ n_accx*(dt*dt*dt) / 2, n_accx*(dt*dt), n_accx*dt, 0, 0, 0, 0, 0, 0 },
-	{ n_accx*(dt*dt) / 2, n_accx*dt, n_accx, 0, 0, 0, 0, 0, 0 },
-	{ 0, 0, 0, n_accy*(dt*dt*dt*dt) / 4, n_accy*(dt*dt*dt) / 2, n_accy*(dt*dt) / 2, 0, 0, 0 },
-	{ 0, 0, 0, n_accy*(dt*dt*dt) / 2, n_accy*(dt*dt), n_accy*dt, 0, 0, 0 },
-	{ 0, 0, 0, n_accy*(dt*dt) / 2, n_accy*dt, n_accy, 0, 0, 0 },
-	{ 0, 0, 0, 0, 0, 0, n_accz*(dt*dt*dt*dt) / 4, n_accz*(dt*dt*dt) / 2, n_accz*(dt*dt) / 2 },
-	{ 0, 0, 0, 0, 0, 0, n_accz*(dt*dt*dt) / 2, n_accz*(dt*dt), n_accz*dt },
-	{ 0, 0, 0, 0, 0, 0, n_accz*(dt*dt) / 2, n_accz*dt, n_accz } };
-
-
-	float B_mat[9][3] = { { (dt*dt) / 2, 0, 0 },
-	{ dt, 0, 0 },
-	{ 1, 0, 0 },
-	{ 0, (dt*dt) / 2, 0 },
-	{ 0, dt, 0 },
-	{ 0, 1, 0 },
-	{ 0, 0, (dt*dt) / 2 },
-	{ 0, 0, dt },
-	{ 0, 0, 1 } };
-
-	cv::Mat Aa1(9, 9, CV_32F, A_mat);
-	cv::Mat Aq1(9, 9, CV_32F, Q_mat);
-	cv::Mat Ab1(9, 3, CV_32F, B_mat);
-	Aa1.copyTo(Aa);
-	Aq1.copyTo(Aq);
-	Ab1.copyTo(Ab);
-}
-*/
 
 double Module0::distance(){
 	return(sqrt(pow(xr - xp, 2) + pow(yr - yp, 2) + pow(zr - zp, 2)));
@@ -228,14 +125,14 @@ void
 Module0::loadParams() {
 	prima = true;
 
-	kpx = -760;
-	kpy = 760;
+	kpx = -150;
+	kpy = 150;
 	kpz = -550.0;
 
 	kpyaw = 1500.0;
 
-	kdx = 0.0;
-	kdy = 0.0;
+	kdx = -600.0;
+	kdy = 600.0;
 	kdz = 0.0;
 	kdyaw = 0.0;
 	
@@ -291,7 +188,9 @@ Module0::loadParams() {
 	ey = 0;
 	ez = 0;
 
-	//Carcamento parametri da file
+	thr_vel = 0.075;
+
+	//Caricamento parametri da file
 	ifstream fs("params3.txt");	
 	if (fs.is_open()){
 		//file format:
@@ -301,6 +200,7 @@ Module0::loadParams() {
 		//4th line: ktg speed step
 		//5th line: gravitycompensation pitchOffset
 		//6th line: ke1 ke2 (always negative)
+		//7th line: thr_vel
 		fs >> kpx;
 		fs >> kpy;
 		fs >> kpz;
@@ -322,6 +222,16 @@ Module0::loadParams() {
 
 		fs >> ke1;
 		fs >> ke2;
+		fs >> thr_vel;
+	}
+	//Caricamento Funzioni da file
+	ifstream fs3("functions.txt");
+	if (fs3.is_open()){
+		//file format:
+		//funzione 1 funzione2
+		//spiegazione funzioni disponibili
+		fs3 >> Nfunc1;
+		fs3 >> Nfunc2;
 	}
 }
 
@@ -474,9 +384,40 @@ Module0::DoYourDuty (int wc)
 			dyawr = *((double*)((char*)(rxMsg->ReadData()) + 7 * sizeof(double)));
 
 
-			dxC = dxr;
-			dyC = dyr;
-			dzC = dzr;
+			//Soglia velocità (filtro rumore)
+			//thr_vel = 0.08; //0.1 0.08 0.04
+			int i = 0;
+
+			if ((dxrDeb - dxr) > thr_vel){
+				dxC = dxrDeb - thr_vel;
+			}
+			else if ((dxrDeb - dxr) < -thr_vel){
+				dxC = dxrDeb + thr_vel;
+			}
+			else
+				dxC = dxr;
+
+			if ((dyrDeb - dyr) > thr_vel){
+				dyC = dyrDeb - thr_vel;
+			}
+			else if ((dyrDeb - dyr) < -thr_vel){
+				dyC = dyrDeb + thr_vel;
+			}
+			else
+				dyC = dyr;
+			if ((dzrDeb - dzr) > thr_vel){
+				dzC = dzrDeb - thr_vel;
+			}
+			else if ((dzrDeb - dzr) < -thr_vel){
+				dzC = dzrDeb + thr_vel;
+			}
+			else
+				dzC = dzr;
+
+			//Valore precedente
+			dxrDeb = dxC;
+			dyrDeb = dyC;
+			dzrDeb = dzC;
 			
 		}
 	}
@@ -499,65 +440,6 @@ Module0::DoYourDuty (int wc)
 	R[2] = -sin(theta);
 	R[5] = sin(phi) * cos(theta);
 	R[8] = cos(phi) * cos(theta);
-
-	/*
-	dt = mtime;
-
-	updateMatrices();
-	
-	///Kalman prediction
-	double ax = acc_x*9.81 / 10000;
-	double ay = acc_y*9.81 / 10000;
-	double az = acc_z*9.81 / 10000;
-
-	//Moltiplichiamo per la trasposta di R per portarlo nel frame NED
-	accx = R[0] * ax + R[3] * ay + R[6] * az;
-	accy = R[1] * ax + R[4] * ay + R[7] * az;
-	accz = R[2] * ax + R[5] * ay + R[8] * az;
-
-	Au.at<float>(0, 0) = accx;
-	Au.at<float>(1, 0) = accy;
-	Au.at<float>(2, 0) = accz;
-
-	Ax = Aa*Ax + Ab*Au;
-	Ap = Aa*Ap*(Aa.t()) + Aq;     // prediction ok
-
-	Ay.at<float>(0, 0) = xr;
-	Ay.at<float>(1, 0) = dxC;
-	Ay.at<float>(2, 0) = 0;
-	Ay.at<float>(3, 0) = yr;
-	Ay.at<float>(4, 0) = dyC;
-	Ay.at<float>(5, 0) = 0;
-	Ay.at<float>(6, 0) = zr;
-	Ay.at<float>(7, 0) = dzC;
-	Ay.at<float>(8, 0) = 0;
-
-	//Kalman Update
-
-	Ak = Ap*(Ah.t())*((Ah*Ap*(Ah.t()) + Ar).inv());
-	Ax = Ax + Ak*(Ay - Ax);
-	Ap = (Ah - Ak*Ah)*Ap;
-
-	///End Kalman
-
-	double xk, yk, zk, dxk, dyk, dzk;
-
-	xk = Ax.at<float>(0, 0);
-	dxk = Ax.at<float>(1, 0);
-	yk = Ax.at<float>(3, 0);
-	dyk = Ax.at<float>(4, 0);
-	zk = Ax.at<float>(6, 0);
-	dzk = Ax.at<float>(7, 0);
-
-	//Kalman NED -> drone
-	double dxr1 = R[0] * dxk + R[1] * dyk + R[2] * dzk;
-	double dyr1 = R[3] * dxk + R[4] * dyk + R[5] * dzk;
-	double dzr1 = R[6] * dxk + R[7] * dyk + R[8] * dzk;
-
-	dxk = dxr1;
-	dyk = dyr1;
-	dzk = dzr1;
-	*/
 
 	//No Kalman NED -> drone
 	double dxr1 = R[0] * dxC + R[1] * dyC + R[2] * dzC;
@@ -590,15 +472,6 @@ Module0::DoYourDuty (int wc)
 			array_fgrad[Nfunc1](grad1, xr, yr, zr);
 			array_fgrad[Nfunc2](grad2, xr, yr, zr);
 
-			/*
-			//KALMAN
-			e1 = array_function[Nfunc1](xk, yk, zk);
-			e2 = array_function[Nfunc2](xk, yk, zk);
-
-			array_fgrad[Nfunc1](grad1, xk, yk, zk);
-			array_fgrad[Nfunc2](grad2, xk, yk, zk);
-			*/
-
 			//Soglia errore
 			if (e1 > thre1){
 				e1 = thre1;
@@ -621,8 +494,8 @@ Module0::DoYourDuty (int wc)
 			double Tang[]
 			{
 				-grad1[2] * grad2[1] + grad1[1] * grad2[2],
-					grad1[2] * grad2[0] - grad1[0] * grad2[2],
-					-grad1[1] * grad2[0] + grad1[0] * grad2[1]
+				grad1[2] * grad2[0] - grad1[0] * grad2[2],
+				-grad1[1] * grad2[0] + grad1[0] * grad2[1]
 			};
 
 			//normalizzazione gradienti
@@ -643,19 +516,16 @@ Module0::DoYourDuty (int wc)
 			SumNED[1] *= dist;
 			SumNED[2] *= dist;
 
+			/*
 			//NED -> drone
 			dxd = R[0] * SumNED[0] + R[1] * SumNED[1] + R[2] * SumNED[2];
 			dyd = R[3] * SumNED[0] + R[4] * SumNED[1] + R[5] * SumNED[2];
 			dzd = R[6] * SumNED[0] + R[7] * SumNED[1] + R[8] * SumNED[2];
-
-
-			/*ATTENZIONE!*/
-			//Setup Controllore PID	(cancellare)	
-			/*
-			dxd = dist;
-			dyd = 0;
-			dzd = 0;
 			*/
+			dxd = sumNED[0];
+			dyd = sumNED[1];
+			dxd = sumNED[2];
+
 
 			if (landing == 1){
 				dxd = 0;
@@ -663,42 +533,25 @@ Module0::DoYourDuty (int wc)
 				dzd = 0;
 			}
 
-			//Calcolo errore: (velocità desiderata - misurata)
-			/*
-			ex = dxd - dxr;
-			ey = dyd - dyr;
-			ez = dzd - dzr;
-			*/
-			/*
-			//Kalman
-			ex = dxd - dxk;
-			ey = dyd - dyk;
-			ez = dzd - dzk;
-			*/
 			xg = dxd + xr;
 			yg = dyd + yr;
 			zg = dzd + zr;
 		}
 
-
+		//CALCOLO errore (Frame NED)
 		ex = xg - xr;
 		ey = yg - yr;
 		ez = zg - zr;
+		//NED -> drone
+		double ex1 = R[0] * ex + R[1] * ey + R[2] * ez;
+		double ey1 = R[3] * ex + R[4] * ey + R[5] * ez;
+		double ez1 = R[6] * ex + R[7] * ey + R[8] * ez;
 
 		cumulx = cumulx + ex * mtime;
 		cumuly = cumuly + ey * mtime;
 		cumulz = cumulz + ez * mtime;
 
 		//Derivativo:
-		/*
-		dex = (ex - exback) / mtime;
-		dey = (ey - eyback) / mtime;
-		dez = (ez - ezback) / mtime;
-
-		exback = ex;
-		eyback = ey;
-		ezback = ez;
-		*/
 		dex = -dxr;
 		dey = -dyr;
 		dez = -dzr;
@@ -706,6 +559,7 @@ Module0::DoYourDuty (int wc)
         up = pitchOffset + kpx*(ex) + kix*(cumulx) + kdx*(dex); // pitch command
 		
 		ur = rollOffset + kpy*(ey) + kiy*(cumuly)+ kdy*(dey); // roll command
+
 		
 		//Procedura di ATTERRAGGIO (MAI testata)
 
@@ -733,10 +587,10 @@ Module0::DoYourDuty (int wc)
 			ut = 1700;
 		}
 		
-		//Controllo Yaw (non tarato)
-		yawd = atan2(y_target, x_target);
+		//Controllo Yaw (TESTATO)
+		yawd = atan2(y_target - yr, x_target - xr);
 		eyaw = sin(yawd - yawr);
-		uy = kpyaw*(eyaw);
+		uy = kpyaw*(eyaw)+kdyaw*(-dyawr);
 
         // thresholds to avoid too fast movements
         int16_t CTRL_back;
