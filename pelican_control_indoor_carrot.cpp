@@ -76,7 +76,7 @@ double dxC;
 double dyC;
 double dzC;
 
-double dzrDeb, dzrDeb, dzrDeb;
+double dxrDeb, dyrDeb, dzrDeb;
 double thr_vel;
 
 //Errori
@@ -87,6 +87,12 @@ double ez;
 double step;
 bool prima;
 
+double kpx, kpy, kpz, kix, kiy, kiz, kdx, kdy, kdz;
+double xg, yg, zg;
+double xp, yp, zp;
+double dex, dey, dez;
+
+double dist;
 
 
 
@@ -172,17 +178,19 @@ Module0::loadParams() {
 	yback = 0;
 	zback = 0;
 	//per derivativo errore
+	/*
 	exback = 0;
 	eyback = 0;
 	ezback = 0;
 
+	*/
 	//Punto target per telecamera drone.
 	x_target = 0;
 	y_target = 0;
 
 	//funzioni
-	Nfunc1 = CIRCLE;
-	Nfunc2 = PLANE;
+	Nfunc1 = 0;
+	Nfunc2 = 3;
 
 	ex = 0;
 	ey = 0;
@@ -522,9 +530,9 @@ Module0::DoYourDuty (int wc)
 			dyd = R[3] * SumNED[0] + R[4] * SumNED[1] + R[5] * SumNED[2];
 			dzd = R[6] * SumNED[0] + R[7] * SumNED[1] + R[8] * SumNED[2];
 			*/
-			dxd = sumNED[0];
-			dyd = sumNED[1];
-			dxd = sumNED[2];
+			dxd = SumNED[0];
+			dyd = SumNED[1];
+			dxd = SumNED[2];
 
 
 			if (landing == 1){
@@ -542,10 +550,15 @@ Module0::DoYourDuty (int wc)
 		ex = xg - xr;
 		ey = yg - yr;
 		ez = zg - zr;
+
 		//NED -> drone
 		double ex1 = R[0] * ex + R[1] * ey + R[2] * ez;
 		double ey1 = R[3] * ex + R[4] * ey + R[5] * ez;
 		double ez1 = R[6] * ex + R[7] * ey + R[8] * ez;
+
+		ex = ex1;
+		ey = ey1;
+		ez = ez1;
 
 		cumulx = cumulx + ex * mtime;
 		cumuly = cumuly + ey * mtime;
