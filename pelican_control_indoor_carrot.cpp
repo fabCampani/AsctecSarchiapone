@@ -156,7 +156,7 @@ Module0::loadParams() {
 	ktg = 0.5;
 
 	//velocità di marcia
-	dist = 0.2;   // m/s
+	dist = 0.2;   //m
 	step = 0.19;
 
 	//altezza del suolo
@@ -394,8 +394,8 @@ Module0::DoYourDuty (int wc)
 
 			//Soglia velocità (filtro rumore)
 			//thr_vel = 0.08; //0.1 0.08 0.04
+			
 			int i = 0;
-
 			if ((dxrDeb - dxr) > thr_vel){
 				dxC = dxrDeb - thr_vel;
 			}
@@ -438,6 +438,7 @@ Module0::DoYourDuty (int wc)
 	mtime = ((secc)+(msec / 1000000.0)); //time in sec
 	accum_time = accum_time + mtime;
 	gettimeofday(&starttime2, NULL);
+
 	//Rotation matrix NED -> drone
 	R[0] = cos(theta) * cos(yawr);
 	R[3] = -cos(phi) * sin(yawr) + sin(phi) * sin(theta) * cos(yawr);
@@ -449,7 +450,7 @@ Module0::DoYourDuty (int wc)
 	R[5] = sin(phi) * cos(theta);
 	R[8] = cos(phi) * cos(theta);
 
-	//No Kalman NED -> drone
+	//velocità NED -> drone
 	double dxr1 = R[0] * dxC + R[1] * dyC + R[2] * dzC;
 	double dyr1 = R[3] * dxC + R[4] * dyC + R[5] * dzC;
 	double dzr1 = R[6] * dxC + R[7] * dyC + R[8] * dzC;
@@ -469,11 +470,13 @@ Module0::DoYourDuty (int wc)
 		
 		/***CONTROLLO INIZIA QUI****/
 		if ((prima)||(distance() >= step)){
+			//nuovo goal
 			xp = xr;
 			yp = yr;
 			zp = zr;
 			prima = false;
-			//NO KALMAN
+
+
 			e1 = array_function[Nfunc1](xr, yr, zr);
 			e2 = array_function[Nfunc2](xr, yr, zr);
 
@@ -509,6 +512,7 @@ Module0::DoYourDuty (int wc)
 			//normalizzazione gradienti
 			normalize1(grad1);
 			normalize1(grad2);
+
 			normalize1(Tang);
 
 			//vettore risultante
@@ -524,16 +528,16 @@ Module0::DoYourDuty (int wc)
 			SumNED[1] *= dist;
 			SumNED[2] *= dist;
 
+			dxd = SumNED[0];
+			dyd = SumNED[1];
+			dzd = SumNED[2];
+
 			/*
 			//NED -> drone
 			dxd = R[0] * SumNED[0] + R[1] * SumNED[1] + R[2] * SumNED[2];
 			dyd = R[3] * SumNED[0] + R[4] * SumNED[1] + R[5] * SumNED[2];
 			dzd = R[6] * SumNED[0] + R[7] * SumNED[1] + R[8] * SumNED[2];
 			*/
-			dxd = SumNED[0];
-			dyd = SumNED[1];
-			dxd = SumNED[2];
-
 
 			if (landing == 1){
 				dxd = 0;
