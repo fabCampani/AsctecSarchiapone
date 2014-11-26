@@ -56,6 +56,8 @@ unsigned char m[6];
 unsigned char cmd_ready = 0;
 unsigned char motor_start=1;
 
+bool motors = false;
+
 void transmit(void* byte, unsigned short cnt);
 void varListUpdateFinished();
 void cmdListUpdateFinished();
@@ -131,7 +133,14 @@ Module1::Init()
     initialize3=0;
     landing=0;
     flag=0;
-       
+	ifstream fs("motors.txt");
+	if (fs.is_open()){
+		int m;
+		fs >> m;
+		if (m == 1){
+			motors = true;
+		}
+	}
 }
 
 void
@@ -145,8 +154,9 @@ Module1::DoYourDuty (int wc)
         initializeAsctec();
         aciSetEngineRate(100, 100);
         getchar();
-
-        //startMotors();
+		if (motors){
+			startMotors();
+		}
         CTRL_thrust = 0; //almost take off
         CTRL_pitch = 0;
         CTRL_roll = 0;
@@ -230,7 +240,9 @@ Module1::DoYourDuty (int wc)
             landing=0;
             initialize=0;
             //initialize3=0;
-            //startMotors();
+			if (motors){
+				startMotors();
+			}
             CTRL_thrust = 0; //almost take off
             CTRL_pitch = 0;
             CTRL_roll = 0;

@@ -135,12 +135,12 @@ Module0::loadParams() {
 	kpy = 150;
 	kpz = -550.0;
 
-	kpyaw = 1500.0;
+	kpyaw = 1500;
 
 	kdx = -600.0;
 	kdy = 600.0;
 	kdz = 0.0;
-	kdyaw = 0.0;
+	kdyaw = 250.0;
 	
 	kix = 0;
 	kiy = 0;
@@ -201,6 +201,7 @@ Module0::loadParams() {
 	//Caricamento parametri da file
 	ifstream fs("params3.txt");	
 	if (fs.is_open()){
+		cout << "\nParametri caricati da file\n";
 		//file format:
 		//1st line: kpx kpy kpz
 		//2nd line: kix kiy kiz
@@ -470,12 +471,16 @@ Module0::DoYourDuty (int wc)
 		
 		/***CONTROLLO INIZIA QUI****/
 		if ((prima)||(distance() >= step)){
-			//nuovo goal
+			//nuovo punto di partenza
 			xp = xr;
 			yp = yr;
 			zp = zr;
-			prima = false;
 
+			cumulx = 0;
+			cumuly = 0;
+			cumulz = 0;
+
+			prima = false;
 
 			e1 = array_function[Nfunc1](xr, yr, zr);
 			e2 = array_function[Nfunc2](xr, yr, zr);
@@ -654,53 +659,54 @@ Module0::DoYourDuty (int wc)
         }
     }
 
-    // data saving
-	ofstream fs2("dataasctec.txt", std::ofstream::out | std::ofstream::app);
-	
-	if(fs2.is_open()){
-	fs2 << accum_time << "\t";
-	fs2 << e1 << "\t" << e2 << "\t";
-	fs2 << CTRL_pitch << "\t" << CTRL_roll << "\t" << CTRL_thrust << "\t" << CTRL_yaw << "\t";
-    //fs2 << longitude << "\t" << latitude << "\t" << height << "\t";
-    //fs2 << fus_longitude << "\t" << fus_latitude << "\t" << fus_height << "\t";
-    //fs2 << GPS_heading << "\t" << position_accuracy << "\t" << height_accuracy << "\t" << GPS_num << "\t" << GPS_status << "\t";
-	fs2 << ex << "\t" << ey << "\t" << ez << "\t";
-	fs2 << dex << "\t" << dey << "\t" << dez << "\t";
-	fs2 << cumulx << "\t" << cumuly << "\t" << cumulz << "\t";
-    fs2 << xr << "\t" << yr << "\t" << zr << "\t";
-	fs2 << xp << "\t" << yp << "\t" << zp << "\t";
-	fs2 << xg << "\t" << yg << "\t" << zg << "\t";
-	//fs2 << xk << "\t" << yk << "\t" << zk << "\t";
-    fs2 << dxr << "\t" << dyr << "\t" << dzr<<"\t";
-	//fs2 << dxk << "\t" << dyk << "\t" << dzk << "\t";
-	fs2 << dxd << "\t" << dyd << "\t" << dzd << "\t";
-	//fs2 << dxC << "\t" << dyC << "\t" << dzC << "\t";
-    fs2 << theta << "\t" << phi << "\t" << yawr << "\t";
-	fs2 << kpx << "\t";
-	fs2 << kpy << "\t";
-	fs2 << kpz << "\t";
+	if (initialize == 1){
+		// data saving
+		ofstream fs2("dataasctec.txt", std::ofstream::out | std::ofstream::app);
 
-	fs2 << kix << "\t";
-	fs2 << kiy << "\t";
-	fs2 << kiz << "\t";
+		if (fs2.is_open()){
+			fs2 << accum_time << "\t";
+			fs2 << e1 << "\t" << e2 << "\t";
+			fs2 << CTRL_pitch << "\t" << CTRL_roll << "\t" << CTRL_thrust << "\t" << CTRL_yaw << "\t";
+			//fs2 << longitude << "\t" << latitude << "\t" << height << "\t";
+			//fs2 << fus_longitude << "\t" << fus_latitude << "\t" << fus_height << "\t";
+			//fs2 << GPS_heading << "\t" << position_accuracy << "\t" << height_accuracy << "\t" << GPS_num << "\t" << GPS_status << "\t";
+			fs2 << ex << "\t" << ey << "\t" << ez << "\t";
+			fs2 << dex << "\t" << dey << "\t" << dez << "\t";
+			fs2 << cumulx << "\t" << cumuly << "\t" << cumulz << "\t";
+			fs2 << xr << "\t" << yr << "\t" << zr << "\t";
+			fs2 << xp << "\t" << yp << "\t" << zp << "\t";
+			fs2 << xg << "\t" << yg << "\t" << zg << "\t";
+			//fs2 << xk << "\t" << yk << "\t" << zk << "\t";
+			fs2 << dxr << "\t" << dyr << "\t" << dzr << "\t";
+			//fs2 << dxk << "\t" << dyk << "\t" << dzk << "\t";
+			fs2 << dxd << "\t" << dyd << "\t" << dzd << "\t";
+			//fs2 << dxC << "\t" << dyC << "\t" << dzC << "\t";
+			fs2 << theta << "\t" << phi << "\t" << yawr << "\t";
+			fs2 << kpx << "\t";
+			fs2 << kpy << "\t";
+			fs2 << kpz << "\t";
 
-	fs2 << kdx << "\t";
-	fs2 << kdy << "\t";
-	fs2 << kdz << "\t";
+			fs2 << kix << "\t";
+			fs2 << kiy << "\t";
+			fs2 << kiz << "\t";
 
-	fs2 << ktg << "\t";
-	fs2 << dist << "\t";
-	fs2 << step << "\t";
-	fs2 << pitchOffset << "\t";
-	fs2 << ke1 << "\t" << ke2 << "\t";
-	fs2 << gravity << "\t";
-    fs2 <<  "\n";
+			fs2 << kdx << "\t";
+			fs2 << kdy << "\t";
+			fs2 << kdz << "\t";
 
+			fs2 << ktg << "\t";
+			fs2 << dist << "\t";
+			fs2 << step << "\t";
+			fs2 << pitchOffset << "\t";
+			fs2 << ke1 << "\t" << ke2 << "\t";
+			fs2 << gravity << "\t";
+			fs2 << "\n";
+
+		}
+		else {
+			cerr << "File not open!" << endl;
+		}
 	}
-	else {
-	cerr << "File not open!" << endl;
-	}
-
     // terminal visualization (debug)
         
    if((printTimeCounter == printstep)){
@@ -708,8 +714,8 @@ Module0::DoYourDuty (int wc)
         //printf ("gps_cartesian: long %f lat %f height %f \n", long_cart, lat_cart, height_cart);
         //printf ("  fus long %d lat %d height %d \n", fus_longitude, fus_latitude, fus_height);
         //printf ("GPS STATUS:  gps: heading: %d, yaw: %f, accuracy: %d, height accuracy: %d, sat: %d, status: %d  \n", GPS_heading, psi, position_accuracy, height_accuracy, GPS_num, GPS_status);       
-		printf("\n\nROBOT POSITION: x, y, z, yaw: %f %f %f %f\n", xr, yr, zr, yawr*180/M_PI);
-        printf("COMMANDS: command pitch, roll, thrust, yaw: %d %d %d %d \n", CTRL_pitch, CTRL_roll, CTRL_thrust, CTRL_yaw);
+		//printf("\n\nROBOT POSITION: x, y, z, yaw: %f %f %f %f\n", xr, yr, zr, yawr*180/M_PI);
+        //printf("COMMANDS: command pitch, roll, thrust, yaw: %d %d %d %d \n", CTRL_pitch, CTRL_roll, CTRL_thrust, CTRL_yaw);
 		//printf("COMMANDS: ex, ey, ez: %f %f %f \n", ex, ey, ez);
         //printf("VELOCITY   : dx, dy, dz: %f %f %f \n", dxr, dyr, dzr);
 		//printf("VELOCITYNED: dx, dy, dz: %f %f %f \n", dxC, dyC, dzC);
