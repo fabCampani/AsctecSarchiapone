@@ -90,8 +90,6 @@ double dxrDeb;
 double dyrDeb;
 double dzrDeb;
 
-
-
 double dxrUn;
 double dyrUn;
 double dzrUn;
@@ -100,8 +98,6 @@ double Tangx, Tangy, Tangz;
 double Perpx, Perpy, Perpz;
 
 double kpvxMod, kpvyMod;
-
-
 
 
 //ROBA
@@ -480,7 +476,7 @@ Module0::DoYourDuty(int wc)
 
 	//Calcolo delle accelerazioni
 	double T = (ut * 9.81 / gravity);
-	double ax = T * sin(-theta)/1.6;
+	double ax = T * sin((pitchOffset* 0.8936) / 2047 - theta) / 1.6;
 	double ay = T * sin (phi)/1.6;
 	double az = 9.81 - T/1.6; //Ma anche no
 
@@ -545,10 +541,10 @@ Module0::DoYourDuty(int wc)
 
 			dxr3 = xr;
 			dyr3 = yr;
-			dzr3 = zr;
+			dzr3 = pos[2];
 			dxr4 = dxr;
 			dyr4 = dyr;
-			dzr4 = dzr;
+			dzr4 = vel[2];
 
 			xr = pos[0];
 			yr = pos[1];
@@ -873,8 +869,8 @@ Module0::DoYourDuty(int wc)
 		{
 			T = CTRL_thrust* 9.81 / gravity;
 			double peso = 1.5;
-			contrx[0] = (T * sin(((pitchOffset - CTRL_pitch) * 0.8936) / 2047)) / peso;
-			contry[0] = (T * sin((CTRL_roll * 0.8936) / 2047)) / peso;
+			contrx[0] = (T * sin(((pitchOffset - CTRL_pitch) * 0.8936) / 2047))/ peso;
+			contry[0] = (T * sin((CTRL_roll * 0.8936) / 2047))/ peso;
 			contrz[0] = (9.81 - T )/ peso;
 			telecamere = false;
 		}
