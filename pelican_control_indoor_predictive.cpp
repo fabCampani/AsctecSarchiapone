@@ -13,7 +13,7 @@
 #define ez_thr 2.5
 #define integrativeok 1.5
 
-#define RITARDO 2
+#define RITARDO 10
 
 //asctec
 #include "asctecCommIntf.h"
@@ -106,10 +106,10 @@ double kpvxMod, kpvyMod;
 
 //ROBA
 double last_time = 0;
-double timeVec[2];
-double contrx[2];
-double contry[2];
-double contrz[2];
+double timeVec[RITARDO];
+double contrx[RITARDO];
+double contry[RITARDO];
+double contrz[RITARDO];
 bool telecamere;
 
 
@@ -358,19 +358,19 @@ Module0::initializeDataSaving() {
 		fs2 << "ctrlyaw\t";
 		fs2 << "edx" << "\t" << "edy" << "\t" << "edz" << "\t";
 		fs2 << "cumulx" << "\t" << "cumuly" << "\t" << "cumulz" << "\t";
-		fs2 << "x\t";
-		fs2 << "y\t";
-		fs2 << "z\t";
-		fs2 << "dxr\t";
-		fs2 << "dyr\t";
-		fs2 << "dzr\t";
+		fs2 << "x_pred\t";
+		fs2 << "y_pred\t";
+		fs2 << "z_pred\t";
+		fs2 << "dxr_pred\t";
+		fs2 << "dyr_pred\t";
+		fs2 << "dzr_pred\t";
 
 		fs2 << "dxrT" << "\t" << "dyrT" << "\t" << "dzrT" << "\t";
 		fs2 << "dxrUn" << "\t" << "dyrUn" << "\t" << "dzrUn" << "\t";
 
 
-		fs2 << "xpred" << "\t" << "ypred" << "\t" << "zpred" << "\t";
-		fs2 << "dxpred" << "\t" << "dypred" << "\t" << "dzpred" << "\t";
+		fs2 << "x" << "\t" << "y" << "\t" << "z" << "\t";
+		fs2 << "dx" << "\t" << "dy" << "\t" << "dz" << "\t";
 		fs2 << "ux" << "\t" << "uy" << "\t" << "uz" << "\t";
 
 		fs2 << "dxd\t";
@@ -543,13 +543,19 @@ Module0::DoYourDuty(int wc)
 
 			PredizioneStato(pos, vel, RITARDO);
 
-			dxr3 = pos[0];
-			dyr3 = pos[1];
-			dzr3 = pos[2];
-			dxr4 = vel[0];
-			dyr4 = vel[1];
-			dzr4 = vel[2];
+			dxr3 = xr;
+			dyr3 = yr;
+			dzr3 = zr;
+			dxr4 = dxr;
+			dyr4 = dyr;
+			dzr4 = dzr;
 
+			xr = pos[0];
+			yr = pos[1];
+			//zr = pos[2];
+			dxr = vel[0];
+			dyr = vel[1];
+			//dzr = vel[2];
 
 			//Soglia velocità (filtro rumore)
 			//thr_vel = 0.08; //0.1 0.08 0.04
@@ -621,8 +627,11 @@ Module0::DoYourDuty(int wc)
 	RemoveCurrentMsg();
 
 	//Previsione velocità attuale (con angolo attuale)	
+	/*
 	dxr += ax*mtime;
 	dyr += ay*mtime;
+	*/
+
 
 	// time calculation
 	gettimeofday(&endtime2, NULL);
@@ -863,10 +872,10 @@ Module0::DoYourDuty(int wc)
 		if (telecamere)
 		{
 			T = CTRL_thrust* 9.81 / gravity;
-
-			contrx[0] = (T * (-CTRL_pitch * 0.8936) / 2047) / 1.5;
-			contry[0] = (T * (CTRL_roll * 0.8936) / 2047) / 1.5;
-			contrz[0] = 9.81 - T / 1.5;
+			double peso = 1.5;
+			contrx[0] = (T * sin(((pitchOffset - CTRL_pitch) * 0.8936) / 2047)) / peso;
+			contry[0] = (T * sin((CTRL_roll * 0.8936) / 2047)) / peso;
+			contrz[0] = (9.81 - T )/ peso;
 			telecamere = false;
 		}
 
