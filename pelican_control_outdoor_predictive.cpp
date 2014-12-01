@@ -62,29 +62,31 @@ extern int16_t acc_x;
 extern int16_t acc_y;
 extern int16_t acc_z;
 //////////////////////
-extern int32_t latitude;
-extern int32_t longitude;
-extern int32_t height;
-extern int32_t fus_latitude;
-extern int32_t fus_longitude;
-extern int32_t fus_height;
+
+extern int32_t GPS_latitude;
+extern int32_t GPS_longitude;
+extern int32_t GPS_height;
+extern int32_t fusion_latitude;
+extern int32_t fusion_longitude;
+extern int32_t fusion_height;
 extern int32_t GPS_heading;
 extern u_int32_t position_accuracy;
 extern u_int32_t height_accuracy;
 extern u_int32_t GPS_num;
 extern int32_t GPS_status;
-extern int32_t fus_speed_x;
-extern int32_t fus_speed_y;
-extern int32_t fus_speed_z;
-extern int32_t speed_x;
-extern int32_t speed_y;
+extern int32_t fusion_speed_x;
+extern int32_t fusion_speed_y;
+extern int32_t fusion_speed_z;
+extern int32_t GPS_speed_x;
+extern int32_t GPS_speed_y;
 
 
 
 #define LANDING 95
 
-
+//OFFSET coordinate GPS
 double lat_off, long_off, height_off;
+bool flag_off = false;
 
 //Tipo di funzione
 int Nfunc1;
@@ -432,7 +434,12 @@ Module0::initializeDataSaving() {
 		fs2 << "pitchoff\t";
 		fs2 << "ke1\tke2\t";
 		fs2 << "gravity\t";
-		fs2 << "thr_vel\n";
+		fs2 << "thr_vel\t";
+
+		fs2 << "gps_accuracy\t";
+		fs2 << "height_accuracy\t";
+		fs2 << "gps_sat_num\t";
+		fs2 << "gps_status\n";
 
 
 
@@ -530,10 +537,10 @@ Module0::DoYourDuty(int wc)
 			int recc = *rxMsg->ReadData();
 			if (recc == 94)
 			{
-				lat_off = ((double)latitude*60.0*1852.0 / 10000000.0);
-				long_off = ((double)longitude*60.0*1852.0 / 10000000.0)*cos(((double)latitude*M_PI) / (10000000.0*180.0));
-				height_off = (double)fus_height / 1000.0;
-				cout << longitude << "     " << long_off << endl;
+				lat_off = ((double)fusion_latitude*60.0*1852.0 / 10000000.0);
+				long_off = ((double)fusion_longitude*60.0*1852.0 / 10000000.0)*cos(((double)fusion_latitude*M_PI) / (10000000.0*180.0));
+				height_off = (double)fusion_height / 1000.0;
+				cout << fusion_longitude << "     " << long_off << endl;
 				cout << "*             height_off               *" << endl;
 				cout << "********************************************" << endl;
 
@@ -543,16 +550,15 @@ Module0::DoYourDuty(int wc)
 	}
 	RemoveCurrentMsg();
 
-	xr = (((double)latitude*60.0*1852.0 / 10000000.0) - lat_off);
-	yr = ((((double)longitude*60.0*1852.0 / 10000000.0)*(cos(((double)latitude*M_PI) / (10000000.0*180.0)))) - long_off);
-	zr = -(((double)fus_height / 1000.0) - height_off);
+	xr = (((double)fusion_latitude*60.0*1852.0 / 10000000.0) - lat_off);
+	yr = ((((double)fusion_longitude*60.0*1852.0 / 10000000.0)*(cos(((double)fusion_latitude*M_PI) / (10000000.0*180.0)))) - long_off);
+	zr = -(((double)fusion_height / 1000.0) - height_off);
 
-	dxr = (double)speed_x / 1000;
-	dyr = (double)speed_y / 1000;
-	dzr = (double)fus_speed_z / 1000;
+	dxr = (double)fusion_speed_x / 1000;
+	dyr = (double)fusion_speed_y / 1000;
+	dzr = (double)fusion_speed_z / 1000;
 
-	//STIMATORE STATO successivo:
-	/*
+	//STIMATORE STATO successivo:	
 	double pos[3] = { xr, yr, zr };
 	double vel[3] = { dxr, dyr, dzr };
 
@@ -571,7 +577,7 @@ Module0::DoYourDuty(int wc)
 	dxr = vel[0];
 	dyr = vel[1];
 	//dzr = vel[2];
-	*/
+	
 
 	//Soglia velocità (filtro rumore)
 	//thr_vel = 0.08; //0.1 0.08 0.04
@@ -626,7 +632,7 @@ Module0::DoYourDuty(int wc)
 	dxr = dxr1;
 	dyr = dyr1;
 	dzr = dzr1;
-	/*
+	
 	telecamere = true;		//?
 
 	for (int i = RITARDO - 1; i >0; i--)
@@ -639,7 +645,7 @@ Module0::DoYourDuty(int wc)
 	}
 	timeVec[0] = accum_time - last_time;
 	last_time = accum_time;
-	*/
+	
 	
 	//Previsione velocità attuale (con angolo attuale)	
 	/*
@@ -884,7 +890,7 @@ Module0::DoYourDuty(int wc)
 
 		
 		//CONVERSIONE
-		/*
+		
 		if (telecamere)
 		{
 			T = CTRL_thrust* 9.81 / gravity;
@@ -894,7 +900,7 @@ Module0::DoYourDuty(int wc)
 			contrz[0] = (9.81 - T )/ peso;
 			telecamere = false;
 		}
-		*/
+		
 	}
 
 	// data saving
@@ -955,6 +961,7 @@ Module0::DoYourDuty(int wc)
 			fs2 << ke1 << "\t" << ke2 << "\t";
 			fs2 << gravity << "\t";
 			fs2 << thr_vel;
+			fs2 <<"\t" << position_accuracy << "\t" << height_accuracy << "\t" << GPS_num << "\t" << GPS_status << "\t";
 			fs2 << "\n";
 
 		}
