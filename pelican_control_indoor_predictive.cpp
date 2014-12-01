@@ -107,6 +107,19 @@ double contrx[RITARDO];
 double contry[RITARDO];
 double contrz[RITARDO];
 bool telecamere;
+//Roba Errore Stima
+double x_past_stimate[RITARDO];
+double y_past_stimate[RITARDO];
+double z_past_stimate[RITARDO];
+
+double dx_past_stimate[RITARDO];
+double dy_past_stimate[RITARDO];
+double dz_past_stimate[RITARDO];
+
+double x_error_stim;
+double y_error_stim;
+double z_error_stim;
+
 
 
 
@@ -141,6 +154,7 @@ double media(double *vett, int lenght){
 
 void PredizioneStato(double* vPos, double* vVel, int delay)
 {
+	
 	double x_att = vPos[0];
 	double vx_att = vVel[0];
 	double y_att = vPos[1];
@@ -187,6 +201,41 @@ void PredizioneStato(double* vPos, double* vVel, int delay)
 		az = contrz[delay - j - 1];
 	}
 
+	//----Errore di stima
+	//Shift vettori
+	for (int i = RITARDO - 1; i >0; i--)
+	{
+		x_past_stimate[i] = x_past_stimate[i - 1];
+		y_past_stimate[i] = y_past_stimate[i - 1];
+		z_past_stimate[i] = z_past_stimate[i - 1];
+		dx_past_stimate[i] = dx_past_stimate[i - 1];
+		dy_past_stimate[i] = dy_past_stimate[i - 1];
+		dz_past_stimate[i] = dz_past_stimate[i - 1];
+	}
+	
+	x_past_stimate[0] = x_att;
+	y_past_stimate[0] = y_att;
+	z_past_stimate[0] = z_att;
+	dx_past_stimate[0] = vx_att;
+	dy_past_stimate[0] = vy_att;
+	dz_past_stimate[0] = vz_att;
+
+	//Calcolo errori di stima
+	x_error_stim = vPos[0] - x_past[RITARDO - 1];
+	y_error_stim = vPos[1] - y_past[RITARDO - 1];
+	z_error_stim = vPos[2] - z_past[RITARDO - 1];
+	dx_error_stim = vVel[0] - dx_past[RITARDO - 1];
+	dy_error_stim = vVel[1] - dy_past[RITARDO - 1];
+	dz_error_stim = vVel[2] - dz_past[RITARDO - 1];
+
+	/*
+	vPos[0] = x_att + x_error_stim;
+	vVel[0] = vx_att + dx_error_stim;
+	vPos[1] = y_att + y_error_stim;
+	vVel[1] = vy_att + dy_error_stim;
+	vPos[2] = z_att + z_error_stim;
+	vVel[2] = vz_att + dz_error_stim;
+	*/
 
 	vPos[0] = x_att;
 	vVel[0] = vx_att;
@@ -289,6 +338,19 @@ Module0::loadParams() {
 	edx = 0;
 	edy = 0;
 	edz = 0;
+
+
+	//Inizializzazione Vettori per Predittore
+	inizializeVett(timeVec,RITARDO);
+	inizializeVett(contrx,RITARDO);
+	inizializeVett(contry,RITARDO);
+	inizializeVett(contrz,RITARDO);
+	inizializeVett(x_past_stimate,RITARDO);
+	inizializeVett(y_past_stimate,RITARDO);
+	inizializeVett(z_past_stimate,RITARDO);
+	inizializeVett(dx_past_stimate,RITARDO);
+	inizializeVett(dy_past_stimate,RITARDO);
+	inizializeVett(dz_past_stimate,RITARDO);
 	
 
 	//Carcamento parametri da file
@@ -383,6 +445,9 @@ Module0::initializeDataSaving() {
 		//fs2 << "kpvxMod\tkpvyMod\t";
 
 		fs2 << "ax\tay\taz\t";
+
+		fs2 << "err_sti_x\terr_sti_y\terr_sti_z\t";
+		fs2 << "err_sti_dx\terr_sti_dy\terr_sti_dz\t";
 
 		//fs2 << "dxNED\t";
 		//fs2 << "dyNED\t";
@@ -912,6 +977,8 @@ Module0::DoYourDuty(int wc)
 			//fs2 << kpvxMod << "\t" << kpvyMod << "\t";
 
 			fs2 << ax << "\t" << ay << "\t" << az << "\t";
+			fs2 << x_error_stim << "\t" << y_error_stim << "\t" << z_error_stim << "\t";
+			fs2 << dx_error_stim << "\t" << dy_error_stim << "\t" << dz_error_stim << "\t";
 
 			fs2 << theta << "\t" << phi << "\t" << yawr << "\t";
 			fs2 << yawd << "\t" << eyaw << "\t";
