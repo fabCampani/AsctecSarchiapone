@@ -43,7 +43,7 @@
 using namespace std;
 using namespace cv;
 
-struct timeval starttime2, endtime2;  // variables for the timing estimation
+struct timeval starttime2, endtime2;  // variables for the timing epredation
 
 ///GLOBAL VARIABLES (defined in module2.cpp). VARIABLES AND COMMAND FROM AND TO THE ROBOT (Serial Interface)
 extern int16_t CTRL_pitch;
@@ -107,19 +107,29 @@ double contrx[RITARDO];
 double contry[RITARDO];
 double contrz[RITARDO];
 bool telecamere;
-//Roba Errore Stima
-double x_past_stimate[RITARDO];
-double y_past_stimate[RITARDO];
-double z_past_stimate[RITARDO];
+//Roba Errore Predizione
+double x_past_pred[RITARDO];
+double y_past_pred[RITARDO];
+double z_past_pred[RITARDO];
 
-double dx_past_stimate[RITARDO];
-double dy_past_stimate[RITARDO];
-double dz_past_stimate[RITARDO];
+double dx_past_pred[RITARDO];
+double dy_past_pred[RITARDO];
+double dz_past_pred[RITARDO];
 
-double x_error_stim;
-double y_error_stim;
-double z_error_stim;
+double x_error_pred;
+double y_error_pred;
+double z_error_pred;
+double dx_error_pred;
+double dy_error_pred;
+double dz_error_pred;
 
+double cumulx_pred = 0;
+double cumuly_pred = 0;
+double cumulz_pred = 0;
+
+double cumuldx_pred = 0;
+double cumuldy_pred = 0;
+double cumuldz_pred = 0;
 
 
 
@@ -201,50 +211,58 @@ void PredizioneStato(double* vPos, double* vVel, int delay)
 		az = contrz[delay - j - 1];
 	}
 
-	//----Errore di stima
+	//----Errore di preda
 	//Shift vettori
 	for (int i = RITARDO - 1; i >0; i--)
 	{
-		x_past_stimate[i] = x_past_stimate[i - 1];
-		y_past_stimate[i] = y_past_stimate[i - 1];
-		z_past_stimate[i] = z_past_stimate[i - 1];
-		dx_past_stimate[i] = dx_past_stimate[i - 1];
-		dy_past_stimate[i] = dy_past_stimate[i - 1];
-		dz_past_stimate[i] = dz_past_stimate[i - 1];
+		x_past_pred[i] = x_past_pred[i - 1];
+		y_past_pred[i] = y_past_pred[i - 1];
+		z_past_pred[i] = z_past_pred[i - 1];
+		dx_past_pred[i] = dx_past_pred[i - 1];
+		dy_past_pred[i] = dy_past_pred[i - 1];
+		dz_past_pred[i] = dz_past_pred[i - 1];
 	}
 	
-	x_past_stimate[0] = x_att;
-	y_past_stimate[0] = y_att;
-	z_past_stimate[0] = z_att;
-	dx_past_stimate[0] = vx_att;
-	dy_past_stimate[0] = vy_att;
-	dz_past_stimate[0] = vz_att;
+	x_past_pred[0] = x_att;
+	y_past_pred[0] = y_att;
+	z_past_pred[0] = z_att;
+	dx_past_pred[0] = vx_att;
+	dy_past_pred[0] = vy_att;
+	dz_past_pred[0] = vz_att;
 
-	//Calcolo errori di stima
-	x_error_stim = vPos[0] - x_past[RITARDO - 1];
-	y_error_stim = vPos[1] - y_past[RITARDO - 1];
-	z_error_stim = vPos[2] - z_past[RITARDO - 1];
-	dx_error_stim = vVel[0] - dx_past[RITARDO - 1];
-	dy_error_stim = vVel[1] - dy_past[RITARDO - 1];
-	dz_error_stim = vVel[2] - dz_past[RITARDO - 1];
+	//Calcolo errori di preda
+	x_error_pred = vPos[0] - x_past_pred[RITARDO - 1];
+	y_error_pred = vPos[1] - y_past_pred[RITARDO - 1];
+	z_error_pred = vPos[2] - z_past_pred[RITARDO - 1];
+	dx_error_pred = vVel[0] - dx_past_pred[RITARDO - 1];
+	dy_error_pred = vVel[1] - dy_past_pred[RITARDO - 1];
+	dz_error_pred = vVel[2] - dz_past_pred[RITARDO - 1];
+
+	cumulx_pred += x_error_pred * t_medio;
+	cumuly_pred += y_error_pred * t_medio;
+	cumulz_pred += z_error_pred * t_medio;
+
+	cumuldx_pred += dx_error_pred;
+	cumuldy_pred += dx_error_pred;
+	cumuldz_pred += dy_error_pred;
+
 
 	/*
-	vPos[0] = x_att + x_error_stim;
-	vVel[0] = vx_att + dx_error_stim;
-	vPos[1] = y_att + y_error_stim;
-	vVel[1] = vy_att + dy_error_stim;
-	vPos[2] = z_att + z_error_stim;
-	vVel[2] = vz_att + dz_error_stim;
+	vPos[0] = x_att + x_error_pred;
+	vVel[0] = vx_att + dx_error_pred;
+	vPos[1] = y_att + y_error_pred;
+	vVel[1] = vy_att + dy_error_pred;
+	vPos[2] = z_att + z_error_pred;
+	vVel[2] = vz_att + dz_error_pred;
 	*/
-
+	
 	vPos[0] = x_att;
 	vVel[0] = vx_att;
 	vPos[1]=y_att;
 	vVel[1]=vy_att;
 	vPos[2]=z_att;
 	vVel[2]=vz_att;
-
-
+	
 }
 //Roba che inutile ma che c'è
 void initializeVett(double *vett, int lenght){
@@ -303,7 +321,7 @@ Module0::loadParams() {
 	cumuly = 0,
 	cumulz = 0,
 	cumulyaw = 0;
-	pitchOffset = 170;  // pitch offset, manually estimated
+	pitchOffset = 170;  // pitch offset, manually epredd
 	rollOffset = 0;  // roll offset
 	yawOffset = 0;
 
@@ -341,16 +359,16 @@ Module0::loadParams() {
 
 
 	//Inizializzazione Vettori per Predittore
-	inizializeVett(timeVec,RITARDO);
-	inizializeVett(contrx,RITARDO);
-	inizializeVett(contry,RITARDO);
-	inizializeVett(contrz,RITARDO);
-	inizializeVett(x_past_stimate,RITARDO);
-	inizializeVett(y_past_stimate,RITARDO);
-	inizializeVett(z_past_stimate,RITARDO);
-	inizializeVett(dx_past_stimate,RITARDO);
-	inizializeVett(dy_past_stimate,RITARDO);
-	inizializeVett(dz_past_stimate,RITARDO);
+	initializeVett(timeVec, RITARDO);
+	initializeVett(contrx, RITARDO);
+	initializeVett(contry, RITARDO);
+	initializeVett(contrz, RITARDO);
+	initializeVett(x_past_pred, RITARDO);
+	initializeVett(y_past_pred, RITARDO);
+	initializeVett(z_past_pred, RITARDO);
+	initializeVett(dx_past_pred, RITARDO);
+	initializeVett(dy_past_pred, RITARDO);
+	initializeVett(dz_past_pred, RITARDO);
 	
 
 	//Carcamento parametri da file
@@ -606,17 +624,17 @@ Module0::DoYourDuty(int wc)
 
 			dxr3 = xr;
 			dyr3 = yr;
-			dzr3 = pos[2];
+			dzr3 = zr;
 			dxr4 = dxr;
 			dyr4 = dyr;
-			dzr4 = vel[2];
+			dzr4 = dzr;
 
 			xr = pos[0];
 			yr = pos[1];
-			//zr = pos[2];
+			zr = pos[2];
 			dxr = vel[0];
 			dyr = vel[1];
-			//dzr = vel[2];
+			dzr = vel[2];
 
 			//Soglia velocità (filtro rumore)
 			//thr_vel = 0.08; //0.1 0.08 0.04
@@ -810,7 +828,11 @@ Module0::DoYourDuty(int wc)
 			dyd = 0;
 			dzd = 0;
 		}
-
+		/*
+		dxd -= dx_error_pred;
+		dyd -= dy_error_pred;
+		dzd -= dz_error_pred;
+		*/
 		edx = dxd - dxr;
 		edy = dyd - dyr;
 		edz = dzd - dzr;
@@ -977,8 +999,8 @@ Module0::DoYourDuty(int wc)
 			//fs2 << kpvxMod << "\t" << kpvyMod << "\t";
 
 			fs2 << ax << "\t" << ay << "\t" << az << "\t";
-			fs2 << x_error_stim << "\t" << y_error_stim << "\t" << z_error_stim << "\t";
-			fs2 << dx_error_stim << "\t" << dy_error_stim << "\t" << dz_error_stim << "\t";
+			fs2 << x_error_pred << "\t" << y_error_pred << "\t" << z_error_pred << "\t";
+			fs2 << dx_error_pred << "\t" << dy_error_pred << "\t" << dz_error_pred << "\t";
 
 			fs2 << theta << "\t" << phi << "\t" << yawr << "\t";
 			fs2 << yawd << "\t" << eyaw << "\t";

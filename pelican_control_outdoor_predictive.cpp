@@ -13,7 +13,7 @@
 #define ez_thr 2.5
 #define integrativeok 1.5
 
-#define RITARDO 10
+#define RITARDO 30
 
 //asctec
 #include "asctecCommIntf.h"
@@ -119,7 +119,6 @@ double Tangx, Tangy, Tangz;
 double Perpx, Perpy, Perpz;
 
 double kpvxMod, kpvyMod;
-
 
 //ROBA
 double last_time = 0;
@@ -537,8 +536,8 @@ Module0::DoYourDuty(int wc)
 			int recc = *rxMsg->ReadData();
 			if (recc == 94)
 			{
-				lat_off = ((double)fusion_latitude*60.0*1852.0 / 10000000.0);
-				long_off = ((double)fusion_longitude*60.0*1852.0 / 10000000.0)*cos(((double)fusion_latitude*M_PI) / (10000000.0*180.0));
+				lat_off = ((double)GPS_latitude*60.0*1852.0 / 10000000.0);
+				long_off = ((double)GPS_longitude*60.0*1852.0 / 10000000.0)*cos(((double)fusion_latitude*M_PI) / (10000000.0*180.0));
 				height_off = (double)fusion_height / 1000.0;
 				cout << fusion_longitude << "     " << long_off << endl;
 				cout << "*             height_off               *" << endl;
@@ -549,35 +548,62 @@ Module0::DoYourDuty(int wc)
 		}
 	}
 	RemoveCurrentMsg();
+	//Dati da GPS
 
-	xr = (((double)fusion_latitude*60.0*1852.0 / 10000000.0) - lat_off);
-	yr = ((((double)fusion_longitude*60.0*1852.0 / 10000000.0)*(cos(((double)fusion_latitude*M_PI) / (10000000.0*180.0)))) - long_off);
+	double xrGPS = (((double)fusion_latitude*60.0*1852.0 / 10000000.0) - lat_off);
+	double yrGPS = ((((double)fusion_longitude*60.0*1852.0 / 10000000.0)*(cos(((double)fusion_latitude*M_PI) / (10000000.0*180.0)))) - long_off);
+	double zrGPS = -(((double)fusion_height / 1000.0) - height_off);
+	/*
+	xr = (((double)GPS_latitude*60.0*1852.0 / 10000000.0) - lat_off);
+	yr = ((((double)GPS_longitude*60.0*1852.0 / 10000000.0)*(cos(((double)GPS_latitude*M_PI) / (10000000.0*180.0)))) - long_off);
 	zr = -(((double)fusion_height / 1000.0) - height_off);
+	*/
+	double dxrGPS = (double)fusion_speed_x / 1000;
+	double dyrGPS = (double)fusion_speed_y / 1000;
 
-	dxr = (double)fusion_speed_x / 1000;
-	dyr = (double)fusion_speed_y / 1000;
-	dzr = (double)fusion_speed_z / 1000;
+	double dzrGPS = (double)fusion_speed_z / 1000;
 
-	//STIMATORE STATO successivo:	
-	double pos[3] = { xr, yr, zr };
-	double vel[3] = { dxr, dyr, dzr };
+	/*
+	dxr = (double)GPS_speed_x / 1000;
+	dyr = (double)GPS_speed_y / 1000;
+	*/
+	//Se sono nuovi dati effettuo la previsione
+	if (true){		
+		//STIMATORE STATO successivo:
+		double pos[3] = { xrGPS, yrGPS, zrGPS };
+		double vel[3] = { dxrGPS, dyrGPS, dzrGPS };
 
-	PredizioneStato(pos, vel, RITARDO);
+		PredizioneStato(pos, vel, RITARDO);
 
-	dxr3 = xr;
-	dyr3 = yr;
-	dzr3 = pos[2];
-	dxr4 = dxr;
-	dyr4 = dyr;
-	dzr4 = vel[2];
+		//non predetti
+		dxr3 = xrGPS;
+		dyr3 = yrGPS;
+		dzr3 = zrGPS;
+		dxr4 = dxrGPS;
+		dyr4 = dyrGPS;
+		dzr4 = dzrGPS;
 
-	xr = pos[0];
-	yr = pos[1];
-	//zr = pos[2];
-	dxr = vel[0];
-	dyr = vel[1];
-	//dzr = vel[2];
-	
+		//dati predetti
+		xr = pos[0];
+		yr = pos[1];
+		zr = pos[2];
+		dxr = vel[0];
+		dyr = vel[1];
+		dzr = vel[2];
+
+		telecamere = true;
+
+		for (int i = RITARDO - 1; i > 0; i--)
+		{
+			contrx[i] = contrx[i - 1];
+			contry[i] = contry[i - 1];
+			contrz[i] = contrz[i - 1];
+			timeVec[i] = timeVec[i - 1];
+
+		}
+		timeVec[0] = accum_time - last_time;
+		last_time = accum_time;
+	}
 
 	//Soglia velocità (filtro rumore)
 	//thr_vel = 0.08; //0.1 0.08 0.04
@@ -632,19 +658,6 @@ Module0::DoYourDuty(int wc)
 	dxr = dxr1;
 	dyr = dyr1;
 	dzr = dzr1;
-	
-	telecamere = true;		//?
-
-	for (int i = RITARDO - 1; i >0; i--)
-	{
-		contrx[i] = contrx[i - 1];
-		contry[i] = contry[i - 1];
-		contrz[i] = contrz[i - 1];
-		timeVec[i] = timeVec[i - 1];
-
-	}
-	timeVec[0] = accum_time - last_time;
-	last_time = accum_time;
 	
 	
 	//Previsione velocità attuale (con angolo attuale)	
@@ -974,7 +987,7 @@ Module0::DoYourDuty(int wc)
 	if ((printTimeCounter == printstep)){
 		//printf ("GPS DATA: long %d lat %d height %d", longitude, latitude, height);
 		//printf ("gps_cartesian: long %f lat %f height %f \n", long_cart, lat_cart, height_cart);
-		//printf ("  fus long %d lat %d height %d \n", fus_longitude, fus_latitude, fus_height);
+		//printf ("fus long %d lat %d height %d \n", fusion_longitude, fusion_latitude, fusion_height);
 		//printf ("GPS STATUS:  gps: heading: %d, yaw: %f, accuracy: %d, height accuracy: %d, sat: %d, status: %d  \n", GPS_heading, psi, position_accuracy, height_accuracy, GPS_num, GPS_status);       
 		//printf("\n\nROBOT POSITION: x, y, z, yaw: %f %f %f %f\n", xr, yr, zr, yawr*180/M_PI);
 		//printf("COMMANDS: command pitch, roll, thrust, yaw: %d %d %d %d \n", CTRL_pitch, CTRL_roll, CTRL_thrust, CTRL_yaw);
