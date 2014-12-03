@@ -11,6 +11,7 @@ public:
 	double size;
 
 	Obstacle(){}
+
 	Obstacle(Obstacle &_obs){
 		x = _obs.x;
 		y = _obs.y;

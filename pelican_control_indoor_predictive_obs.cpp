@@ -138,7 +138,7 @@ double cumuldz_pred = 0;
 
 //ostacoli
 
-list<Obstacle> Obstacles;
+list<Obstacle*> Obstacles;
 
 //Funzione normallizzazione vettori
 void normalize1(double *vett){
@@ -605,12 +605,13 @@ Module0::DoYourDuty(int wc)
 			double xo = *((double*)rxMsg->ReadData());
 			double yo = *((double*)((char*)(rxMsg->ReadData()) + sizeof(double)));
 			double zo = *((double*)((char*)(rxMsg->ReadData()) + 2 * sizeof(double)));
-			xo -= xr;
-			yo -= yr;
-			zo -= zr;
-			Obstacle obs = Obstacle(xo, yo, zo, 10, 0.25);
-			Obstacles.push_back(obs);
-			cout << "Ostacolo rilevato! Posizione: " << xo << " " << yo << " " << zo << "\n";
+			xo = xr - xo;
+			yo = yo- yr;
+			zo = zr - zo;
+			//Obstacle *obs = new Obstacle(xo, yo, zo, 10, 0.25);
+			//Obstacles.push_back(obs);
+			cout << "Drone              Posizione: " << dxr3 << " " << dyr3 << " " << dzr3 << "\n";
+			cout << "Ostacolo rilevato! Posizione: " << xo << " " << yo << " " << zo << "\n\n";
 		}
 		else if (rxMsg->ReadType() == 3)
 		{

@@ -1,15 +1,16 @@
 ///////////////////////////////
 // OBSTACLES RECOGNITION     //
-//	    30 hz	??			//
+//	    15 hz	??			//
 ///////////////////////////////
 //#define SAMPLESLEN 3
 #define SAMPLESLEN 3
 #define movingwindow 5
 #define mn 35
-#define OBSTACLE_ID 65
+#define OBSTACLE_ID 1021
 //aruco
 #include "aruco.h"
 #include "cvdrawingutils.h"
+#include <semaphore.h>
 
 
 #include <cmath>
@@ -38,163 +39,60 @@ extern int16_t acc_y;
 extern int16_t acc_z;
 
 //aruco
-int ThePyrDownLevel;
-float TheMarkerSize=0.200;
-string TheInputVideo;
-MarkerDetector MDetector;
-VideoCapture TheVideoCapturer;
-vector<Marker> TheMarkers;
-Mat TheInputImage,TheInputImageCopy;
-CameraParameters TheCameraParameters;
-double ThresParam1,ThresParam2;
-int iThresParam1,iThresParam2;
-int waitTime=0;
-cv::Mat Rcv;
-struct timeval starttime, endtime;
+int ThePyrDownLevel2;
+float TheMarkers2ize2=0.200;
+string TheInputVideo2;
+MarkerDetector MDetector2;
+VideoCapture TheVideoCapturer2;
+vector<Marker> TheMarkers2;
+Mat TheInputImage2,TheInputImage2Copy;
+CameraParameters TheCameraParameters2;
+double ThresParam12,ThresParam22;
+int iThresParam12,iThresParam22;
+int waitTime2=0;
+cv::Mat Rcv2;
+struct timeval starttime3, endtime3;
+
+extern vector<Marker> TheMarkersOriginal;
+extern sem_t mutex;
 
 //statistics
 static double* sorted = new double[SAMPLESLEN];
 static int* occurrences = new int[SAMPLESLEN];
 
-double thr_dim = 0.25
+double thr_dim = 0.0;
 
 // aruco
-int arucoSetup (){
-		TheVideoCapturer.open(0);
-		waitTime=10;
+int myarucoSetup (){
+		TheVideoCapturer2.open(0);
+		waitTime2=10;
 		//check video is open
-		if (!TheVideoCapturer.isOpened()) 
+		if (!TheVideoCapturer2.isOpened()) 
 			{
 			cerr<<"Could not open video"<<endl;
 			return -1;
 			}
 		//read first image to get the dimensions
-		TheVideoCapturer>>TheInputImage;
+		TheVideoCapturer2>>TheInputImage2;
 		//read camera parameters if passed
-			TheCameraParameters.readFromXMLFile("utils/aruco.yml");
-			TheCameraParameters.resize(TheInputImage.size());
+			TheCameraParameters2.readFromXMLFile("utils/aruco.yml");
+			TheCameraParameters2.resize(TheInputImage2.size());
 		//Configure other parameters
-		if (ThePyrDownLevel>0)
-			MDetector.pyrDown(ThePyrDownLevel);
+		if (ThePyrDownLevel2>0)
+			MDetector2.pyrDown(ThePyrDownLevel2);
 		///SET THRESHOLDS
-		MDetector.setThresholdParams(7,1);
+		MDetector2.setThresholdParams(7,1);
 		}
 
-void arucoGrabCycle(){
-    TheVideoCapturer.grab();
-	 TheVideoCapturer.retrieve( TheInputImage);
+void myarucoGrabCycle(){
+    TheVideoCapturer2.grab();
+	 TheVideoCapturer2.retrieve( TheInputImage2);
 	 //copy image
 	 //Detection of markers in the image passed
-	 MDetector.detect(TheInputImage,TheMarkers,TheCameraParameters,TheMarkerSize);
-	 TheInputImage.copyTo(TheInputImageCopy);
+	 MDetector2.detect(TheInputImage2,TheMarkers2,TheCameraParameters2,TheMarkers2ize2);
+	 TheInputImage2.copyTo(TheInputImage2Copy);
 
  }
-
-void initializePosSaving() {
-	ofstream fs("positions_xyz.txt", std::ofstream::out | std::ofstream::trunc);
-
-	if(fs.is_open()){
-		fs << "Positions (x,y,z, yaw) in meters (degrees), calculated with the Aruco Markers with the Asctec axes convention, velocities, angles and accelerations \n";
-		cout << "File with position data initialized" << endl;
-	} else {
-		cerr << "File not open!" << endl;
-	}
-
-}
-	
-// median filter
-
-inline void copyArray( double *from, double *to, int len){
-	assert(NULL!=from);
-	assert(NULL!=to);
-	for (int i = 0; i < len; ++i) {
-		to[i] = from[i];
-	}
-}
-
-inline void mySort(double *arr, int len){
-	assert(NULL!=arr);
-	static double tmp;
-	for (int i = len - 1; i > 0; --i) {
-		for (int j = 0; j < i; ++j) {
-			if (arr[j] > arr[j+1]) {
-				tmp = arr[j];
-				arr[j] = arr[j+1];
-				arr[j+1] = tmp;
-			}
-		}
-	}
-}
-
-inline double mean(double *measurements, int len) {
-	assert(NULL!=measurements);
-	double res = measurements[0];
-	for (int i = 0; i < len; ++i) {
-		res += measurements[i];
-	}
-	res/=(double)len;
-	return res;
-}
-
-inline double mean(const double &a, const double &b){
-	return ((a+b)/2.0);
-}
-
-inline double median(double *measurements, int len, double *sorted) {
-	assert(len > 0);
-	assert(NULL!= measurements);
-	assert(NULL != sorted);
-
-	double res = 0.0;
-	switch(len){
-	case 1:
-		res = measurements[0];
-		break;
-	case 2:
-		res = mean(measurements[0], measurements[1]);
-		break;
-	default:
-		copyArray(measurements, sorted, len);
-		mySort(sorted, len);
-		if ((len % 2) == 0) {
-			res=mean(sorted[len/2], sorted[(len/2)-1]);
-		} else {
-			res = sorted[len/2];
-		}
-		break;
-	}
-
-	return res;
-}
-
-double mode(double *measurements, int len) { 
-	assert(NULL!=measurements);
-	for (int i = 0; i < len; ++i) {
-		occurrences[i] = 0;
-		int j = 0;
-		//bool bFound = false;
-		while ((j < i) && (measurements[i] != measurements[j])) {
-			if (measurements[i] != measurements[j]) {
-				++j;
-			}
-		}
-		++(occurrences[j]);
-	}
-	int iMaxRepeat = 0;
-	for (int i = 1; i < len; ++i) {
-		if (occurrences[i] > occurrences[iMaxRepeat]) {
-			iMaxRepeat = i;
-		}
-	}
-	return measurements[iMaxRepeat];
-}
-
-void shiftBack(double *measurements, int len){
-	for( int i = 0; i < len-1; i++){
-		measurements[i] = measurements[i+1];
-	}
-}
-
 
 Module5::Module5 (ETDispatch* dis, long int period, int sm)
 :ETExpert(dis,period, PRIORITY_AUTO,0,EXPERT_USER)
@@ -211,8 +109,7 @@ Module5::Init()
 {
 	//AddRequest(2);
 	//SetActivationCondition(GetAllMsgTypeMask());
-	message_sent=0; message_rec=0;
-    
+	message_sent=0; message_rec=0;    
 	//distances COM robot - Camera
 	xoc=-0.120, yoc=-0.180, zoc=-0.055;
 	//robot wrt marker
@@ -228,9 +125,9 @@ Module5::Init()
 		 memset(measurements[i],0,sizeof(double)*(SAMPLESLEN)); //zero fill
 	 } 
 	 cout << endl << "Measurements initialized" << endl;
-	arucoSetup();
+	myarucoSetup();
 	//initializePosSaving();
-	gettimeofday(&starttime, NULL);
+	gettimeofday(&starttime3, NULL);
 	mtime=0; 
 	accum_time=0;
 	printstep = 15;
@@ -238,39 +135,49 @@ Module5::Init()
 }
 
 void
-Module5::DoYourDuty (int wc)
+Module5::DoYourDuty(int wc)
 {
 
 	if (wc)  return;
+	return;
+	sem_wait(&mutex);
+	if (TheMarkersOriginal.size() == 0){
+		myarucoGrabCycle();
+		//cout << "myCycle\n";
+	}
+	else
+	{	
+		TheMarkers2 = TheMarkersOriginal;
+		//cout << "NotmyCycle\n";
+	}
+	//sem_post(&mutex);
 
-	arucoGrabCycle();
-   
 	printTimeCounter++;
 	//check if there is a new frame
-	 if(TheMarkers.size() >0){
+	if (TheMarkers2.size() > 0){
 		//convert angles from asctec //theta = pitch
-		theta = 0.001 * (double) angle_pitch *M_PI/180.0;
+		theta = 0.001 * (double)angle_pitch *M_PI / 180.0;
 		//phi = roll
-		phi = 0.001 * (double) angle_roll *M_PI/180.0;
+		phi = 0.001 * (double)angle_roll *M_PI / 180.0;
 		//psi = yaw  ---- just for saving.. we use aPsi calculated with ARUCO
-		psi = 0.001 * (double) (angle_yaw) *M_PI/180.0;
+		psi = 0.001 * (double)(angle_yaw)*M_PI / 180.0;
 		//robot position backup
-		xr_back=xr;
-		yr_back=yr;
-		zr_back=zr;
-		for (int m =(TheMarkers.size()-1);m>=0;m--) {
-			if (TheMarkers[m].id == OBSTACLE_ID){
-				cv::Rodrigues(TheMarkers[m].Rvec, Rcv); // R is 3x3
-				Rcv = Rcv.t();  // rotation of inverse
-				TheMarkers[m].Tvec = -Rcv * TheMarkers[m].Tvec; // translation of inverse
+		for (int m = (TheMarkers2.size() - 1); m >= 0; m--) {
+			if (TheMarkers2[m].id == OBSTACLE_ID){
+				
+				cv::Rodrigues(TheMarkers2[m].Rvec, Rcv2); // R is 3x3
+				Rcv2 = Rcv2.t();  // rotation of inverse
+				TheMarkers2[m].Tvec = -Rcv2 * TheMarkers2[m].Tvec; // translation of inverse
+				
 				///marker position with respect to the camera ( - per invertire gli assi)
-				xc = -TheMarkers[m].Tvec.at<float>(1, 0); //aruco y
-				yc = -TheMarkers[m].Tvec.at<float>(0, 0); //aruco x
-				zc = -TheMarkers[m].Tvec.at<float>(2, 0); //aruco z
-				aPhi = asin(-Rcv.at<float>(2, 0)); //roll calculated with aruco
+				
+				xc = -TheMarkers2[m].Tvec.at<float>(1, 0); //aruco y
+				yc = -TheMarkers2[m].Tvec.at<float>(0, 0); //aruco x
+				zc = -TheMarkers2[m].Tvec.at<float>(2, 0); //aruco z
+				aPhi = asin(-Rcv2.at<float>(2, 0)); //roll calculated with aruco
 				double cosphi = cos(aPhi);
-				//aTheta =- ((acos(Rcv.at<float>(2,2)/cosphi)) - M_PI/2.0); //pitch calculated with aruco
-				aPsi = asin(Rcv.at<float>(1, 0) / cosphi); // yaw calculated with aruco
+				//aTheta =- ((acos(Rcv2.at<float>(2,2)/cosphi)) - M_PI/2.0); //pitch calculated with aruco
+				aPsi = asin(Rcv2.at<float>(1, 0) / cosphi); // yaw calculated with aruco
 				//rotation matrix R linerized:
 				// 11 12 13 21 22 23 31 32 33
 				//using theta and phi from asctec and psi from aruco
@@ -289,6 +196,7 @@ Module5::DoYourDuty (int wc)
 				R[8] = cos(phi) * cos(theta);
 				//updated offset wrt marker
 				//Pom = R * Poc
+
 				xom = R[0] * xoc + R[1] * yoc + R[2] * zoc;
 				yom = R[3] * xoc + R[4] * yoc + R[5] * zoc;
 				zom = R[6] * xoc + R[7] * yoc + R[8] * zoc;
@@ -297,22 +205,29 @@ Module5::DoYourDuty (int wc)
 				xr = xom + xc;
 				yr = yom + yc;
 				zr = zom + zc;
+				cout << "Le telecamere hanno trovato il marker: x, y, z:" << xr << " " << yr << " " << zr << endl;
 			}
 
 		}
-	gettimeofday(&endtime, NULL);
-	secc=endtime.tv_sec - starttime.tv_sec;
-	msec=endtime.tv_usec-starttime.tv_usec;
-	mtime = ((secc)+(msec/1000000.0)); //time in sec
-	accum_time=accum_time+mtime;
-	if (sqrt(pow(xr - xr_back, 2) + pow(yr - yr_back, 2) + pow(zr - zr_back, 2)) > thr_dim){
-		ETMessage *txMessage = new ETMessage(3 * sizeof(double), /*SendType*/ 5);
-		*((double*)txMessage->GetData()) = xr;
-		*((double*)((char*)(txMessage->GetData()) + sizeof(double))) = yr;
-		*((double*)((char*)(txMessage->GetData()) + 2 * sizeof(double))) = zr;
-		ShareMsg(txMessage);
-		message_sent++;
+		gettimeofday(&endtime3, NULL);
+		secc = endtime3.tv_sec - starttime3.tv_sec;
+		msec = endtime3.tv_usec - starttime3.tv_usec;
+		mtime = ((secc)+(msec / 1000000.0)); //time in sec
+		accum_time = accum_time + mtime;
+		if (sqrt(pow(xr - xr_back, 2) + pow(yr - yr_back, 2) + pow(zr - zr_back, 2)) > thr_dim){
+			xr_back = xr;
+			yr_back = yr;
+			zr_back = zr;
+			ETMessage *txMessage = new ETMessage(3 * sizeof(double), /*SendType*/ 5);
+			*((double*)txMessage->GetData()) = xr;
+			*((double*)((char*)(txMessage->GetData()) + sizeof(double))) = yr;
+			*((double*)((char*)(txMessage->GetData()) + 2 * sizeof(double))) = zr;
+			ShareMsg(txMessage);
+			
+		}
 	}
+	message_sent++;
+	sem_post(&mutex);
 }
 
 void
@@ -320,6 +235,6 @@ Module5::Close()
 {
 	delete[] sorted;
 	delete[] occurrences;
- 	printf("\nPeriodic N %d missed %ld  deadlines ",ExpertId, NMissedDeadLine);
+ 	printf("\nPeriodic obstacles N %d missed %ld  deadlines ",ExpertId, NMissedDeadLine);
  	printf("  and executed %ld times ",message_sent);
 }

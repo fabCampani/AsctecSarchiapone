@@ -11,6 +11,8 @@
 #include "cvdrawingutils.h"
 
 
+#include <semaphore.h>
+
 #include <cmath>
 #include <fstream>
 #include <sstream>
@@ -51,11 +53,14 @@ int waitTime=0;
 cv::Mat Rcv;
 struct timeval starttime, endtime;
 
+vector<Marker> TheMarkersOriginal;
+
 //statistics
 static double* sorted = new double[SAMPLESLEN];
 static int* occurrences = new int[SAMPLESLEN];
 
-
+//Semaphores ?
+sem_t mutex;
 
 // aruco
 int arucoSetup (){
@@ -84,9 +89,8 @@ void arucoGrabCycle(){
 	 TheVideoCapturer.retrieve( TheInputImage);
 	 //copy image
 	 //Detection of markers in the image passed
-	 MDetector.detect(TheInputImage,TheMarkers,TheCameraParameters,TheMarkerSize);
+	 MDetector.detect(TheInputImage, TheMarkersOriginal, TheCameraParameters, TheMarkerSize);
 	 TheInputImage.copyTo(TheInputImageCopy);
-
  }
 
 void initializePosSaving() {
@@ -199,6 +203,7 @@ Module3::Module3 (ETDispatch* dis, long int period, int sm)
 :ETExpert(dis,period, PRIORITY_AUTO,0,EXPERT_USER)
 {
 	SendType = sm;
+	sem_init(&mutex, 0, 1);
 }
 
 Module3::~Module3()
@@ -286,7 +291,10 @@ if (wc)  return;
 //	}
 //	RemoveCurrentMsg();
     //arucoSetup();
+	sem_wait(&mutex);
 	arucoGrabCycle();
+	TheMarkers = TheMarkersOriginal;
+	sem_post(&mutex);
     
 	for (unsigned int i=(mn*movingwindow)-1; i>(mn-1); i--)
 		{
@@ -369,6 +377,9 @@ if (wc)  return;
 			 xr = xom + xc;
 			 yr = yom + yc;
 			 zr = zom + zc;
+			 if (TheMarkers[m].id == 1021){
+				 cout << "Le telecamere hanno trovato il marker: x, y, z:" << xr << " " << yr << " " << zr << endl;
+			 }
 			switch(TheMarkers[m].id){
 				case 65:
                     x_ext[0]=xr;
@@ -634,111 +645,105 @@ if (wc)  return;
 					averageyaw[i]= start_average_yaw;
 				}
 			}
-		}
-
-
-		///marker position extimation
-
-
+		}///marker position extimation
 		else {
-			markerCounter=0;
-			markerx=0;
-			markery=0;
-			markerz=0;
-			markeryaw=0;
-			averageCounter2=0;
+			markerCounter = 0;
+			markerx = 0;
+			markery = 0;
+			markerz = 0;
+			markeryaw = 0;
+			averageCounter2 = 0;
 
-			for (unsigned int i=0;i<mn;i++){
-				if ((y_ext[i]!=-1000)){
-					averageCounter2=averageCounter2+1;
-					markerx=markerx+x_ext[i];
-					markery=markery+y_ext[i];
-					markerz=markerz+z_ext[i];
-					markeryaw=markeryaw+yaw_ext[i];
+			for (unsigned int i = 0; i < mn; i++){
+				if ((y_ext[i] != -1000)){
+					averageCounter2 = averageCounter2 + 1;
+					markerx = markerx + x_ext[i];
+					markery = markery + y_ext[i];
+					markerz = markerz + z_ext[i];
+					markeryaw = markeryaw + yaw_ext[i];
 				}
 			}
 
-			if (averageCounter2!=0){
-				averagex[0]=markerx/averageCounter2;
-				averagey[0]=markery/averageCounter2;
-				averagez[0]=markerz/averageCounter2;
-				averageyaw[0]=markeryaw/averageCounter2;
+			if (averageCounter2 != 0){
+				averagex[0] = markerx / averageCounter2;
+				averagey[0] = markery / averageCounter2;
+				averagez[0] = markerz / averageCounter2;
+				averageyaw[0] = markeryaw / averageCounter2;
 			}
 
 			else{
-				averagex[0]=averagex[1];
-				averagey[0]=averagey[1];
-				averagez[0]=averagez[1];
-				averageyaw[0]=averageyaw[1];
+				averagex[0] = averagex[1];
+				averagey[0] = averagey[1];
+				averagez[0] = averagez[1];
+				averageyaw[0] = averageyaw[1];
 			}
 
-			markerx=0;
-			markery=0;
-			markerz=0;
-			markeryaw=0;
+			markerx = 0;
+			markery = 0;
+			markerz = 0;
+			markeryaw = 0;
 
-			for (unsigned int i=0;i<mn;i++){
-				if (y_ext[i]!=-1000){
-					if (y_ext_back[i]!=-1000){
-						dist=abs(y_ext[i]-y_ext_back[i]);
+			for (unsigned int i = 0; i < mn; i++){
+				if (y_ext[i] != -1000){
+					if (y_ext_back[i] != -1000){
+						dist = abs(y_ext[i] - y_ext_back[i]);
 					}
 					else{
-						dist=0;
+						dist = 0;
 					}
-					if (dist<thr1){
-						for (int k=0; k<movingwindow; k++){
-							if (y_ext_back[i+mn*k]!=-1000){
-								x_ext[i]=x_ext[i]+x_ext_back[i+mn*k];
-								y_ext[i]=y_ext[i]+y_ext_back[i+mn*k];
-								z_ext[i]=z_ext[i]+z_ext_back[i+mn*k];
-								yaw_ext[i]=yaw_ext[i]+yaw_ext_back[i+mn*k];
+					if (dist < thr1){
+						for (int k = 0; k < movingwindow; k++){
+							if (y_ext_back[i + mn*k] != -1000){
+								x_ext[i] = x_ext[i] + x_ext_back[i + mn*k];
+								y_ext[i] = y_ext[i] + y_ext_back[i + mn*k];
+								z_ext[i] = z_ext[i] + z_ext_back[i + mn*k];
+								yaw_ext[i] = yaw_ext[i] + yaw_ext_back[i + mn*k];
 							}
 							else{
 
-								x_ext[i]=x_ext[i]+averagex[k];
-								y_ext[i]=y_ext[i]+averagey[k];
-								z_ext[i]=z_ext[i]+averagez[k];
-								yaw_ext[i]=yaw_ext[i]+averageyaw[k];
+								x_ext[i] = x_ext[i] + averagex[k];
+								y_ext[i] = y_ext[i] + averagey[k];
+								z_ext[i] = z_ext[i] + averagez[k];
+								yaw_ext[i] = yaw_ext[i] + averageyaw[k];
 							}
 						}
-						x_ext[i]=x_ext[i]/(movingwindow+1);
-						y_ext[i]=y_ext[i]/(movingwindow+1);
-						z_ext[i]=z_ext[i]/(movingwindow+1);
-						yaw_ext[i]=yaw_ext[i]/(movingwindow+1);
+						x_ext[i] = x_ext[i] / (movingwindow + 1);
+						y_ext[i] = y_ext[i] / (movingwindow + 1);
+						z_ext[i] = z_ext[i] / (movingwindow + 1);
+						yaw_ext[i] = yaw_ext[i] / (movingwindow + 1);
 					}
 					else{
-						x_ext[i]=x_ext_back[i];
-						y_ext[i]=y_ext_back[i];
-						z_ext[i]=z_ext_back[i];
-						yaw_ext[i]=yaw_ext_back[i];
+						x_ext[i] = x_ext_back[i];
+						y_ext[i] = y_ext_back[i];
+						z_ext[i] = z_ext_back[i];
+						yaw_ext[i] = yaw_ext_back[i];
 
 					}
 				}
 
-				if((y_ext[i]!=-1000)&(y_ext_back[i]!=-1000)&(y_ext_back[i+mn]!=-1000)){
+				if ((y_ext[i] != -1000)&(y_ext_back[i] != -1000)&(y_ext_back[i + mn] != -1000)){
 					markerCounter++;
-					markerx=markerx+x_ext[i];
-					markery=markery+y_ext[i];
-					markerz=markerz+z_ext[i];
-					markeryaw=markeryaw+yaw_ext[i];
+					markerx = markerx + x_ext[i];
+					markery = markery + y_ext[i];
+					markerz = markerz + z_ext[i];
+					markeryaw = markeryaw + yaw_ext[i];
 				}
 
 			}
 
-			if (markerCounter!=0){
-				xr=markerx/markerCounter;
-				yr=markery/markerCounter;
-				zr=markerz/markerCounter;
-				aPsi=(markeryaw/markerCounter)*M_PI/180;
+			if (markerCounter != 0){
+				xr = markerx / markerCounter;
+				yr = markery / markerCounter;
+				zr = markerz / markerCounter;
+				aPsi = (markeryaw / markerCounter)*M_PI / 180;
 			}
 			else{
-				xr=xr_back;
-				yr=yr_back;
-				zr=zr_back;
-				aPsi=aPsi_back;
+				xr = xr_back;
+				yr = yr_back;
+				zr = zr_back;
+				aPsi = aPsi_back;
 			}
 		}
-	
 	gettimeofday(&endtime, NULL);
 	secc=endtime.tv_sec - starttime.tv_sec;
 	msec=endtime.tv_usec-starttime.tv_usec;
@@ -828,6 +833,7 @@ else
 	*((double*)((char*)(txMessage->GetData())+7*sizeof(double)))=dyawmsg;
 	ShareMsg(txMessage);
 	message_sent++;
+	//sem_post(&mutex);
 }
 
 void
@@ -835,6 +841,6 @@ Module3::Close()
 {
 	delete[] sorted;
 	delete[] occurrences;
- 	printf("\nPeriodic N %d missed %ld  deadlines ",ExpertId, NMissedDeadLine);
+ 	printf("\nPeriodic cameras N %d missed %ld  deadlines ",ExpertId, NMissedDeadLine);
  	printf("  and executed %ld times ",message_sent);
 }
