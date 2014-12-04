@@ -211,7 +211,7 @@ void PredizioneStato(double* vPos, double* vVel, int delay)
 		az = contrz[delay - j - 1];
 	}
 
-	//----Errore di preda
+	//----Errore di predizione
 	//Shift vettori
 	for (int i = RITARDO - 1; i >0; i--)
 	{
@@ -229,31 +229,31 @@ void PredizioneStato(double* vPos, double* vVel, int delay)
 	dx_past_pred[0] = vx_att;
 	dy_past_pred[0] = vy_att;
 	dz_past_pred[0] = vz_att;
+	if (x_past_pred[RITARDO - 1] != 0){
+		//Calcolo errori di predizione
+		x_error_pred = vPos[0] - x_past_pred[RITARDO - 1];
+		y_error_pred = vPos[1] - y_past_pred[RITARDO - 1];
+		z_error_pred = vPos[2] - z_past_pred[RITARDO - 1];
+		dx_error_pred = vVel[0] - dx_past_pred[RITARDO - 1];
+		dy_error_pred = vVel[1] - dy_past_pred[RITARDO - 1];
+		dz_error_pred = vVel[2] - dz_past_pred[RITARDO - 1];
 
-	//Calcolo errori di preda
-	x_error_pred = vPos[0] - x_past_pred[RITARDO - 1];
-	y_error_pred = vPos[1] - y_past_pred[RITARDO - 1];
-	z_error_pred = vPos[2] - z_past_pred[RITARDO - 1];
-	dx_error_pred = vVel[0] - dx_past_pred[RITARDO - 1];
-	dy_error_pred = vVel[1] - dy_past_pred[RITARDO - 1];
-	dz_error_pred = vVel[2] - dz_past_pred[RITARDO - 1];
+		cumulx_pred += x_error_pred * t_medio;
+		cumuly_pred += y_error_pred * t_medio;
+		cumulz_pred += z_error_pred * t_medio;
 
-	cumulx_pred += x_error_pred * t_medio;
-	cumuly_pred += y_error_pred * t_medio;
-	cumulz_pred += z_error_pred * t_medio;
-
-	cumuldx_pred += dx_error_pred;
-	cumuldy_pred += dx_error_pred;
-	cumuldz_pred += dy_error_pred;
-
+		cumuldx_pred += dx_error_pred * tmedio;
+		cumuldy_pred += dx_error_pred * tmedio;
+		cumuldz_pred += dy_error_pred * tmedio;
+	}
 
 	/*
-	vPos[0] = x_att + x_error_pred;
-	vVel[0] = vx_att + dx_error_pred;
-	vPos[1] = y_att + y_error_pred;
-	vVel[1] = vy_att + dy_error_pred;
-	vPos[2] = z_att + z_error_pred;
-	vVel[2] = vz_att + dz_error_pred;
+	vPos[0] = x_att + cumulx_error_pred;
+	vVel[0] = vx_att + cumuldx_error_pred;
+	vPos[1] = y_att + cumuly_error_pred;
+	vVel[1] = vy_att + cumuldy_error_pred;
+	vPos[2] = z_att + cumulz_error_pred;
+	vVel[2] = vz_att + cumuldz_error_pred;
 	*/
 	
 	vPos[0] = x_att;

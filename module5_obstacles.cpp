@@ -212,6 +212,7 @@ Module5::DoYourDuty(int wc)
 		msec = endtime3.tv_usec - starttime3.tv_usec;
 		mtime = ((secc)+(msec / 1000000.0)); //time in sec
 		accum_time = accum_time + mtime;
+		//theresold to distance between two consecutive obstacles (if necessary)
 		if (sqrt(pow(xr - xr_back, 2) + pow(yr - yr_back, 2) + pow(zr - zr_back, 2)) > thr_dim){
 			xr_back = xr;
 			yr_back = yr;
