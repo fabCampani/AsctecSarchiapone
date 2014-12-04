@@ -83,9 +83,9 @@ double edy;
 double edz;
 
 
-double dxr3, dxr4, dxr5;
-double dyr3, dyr4, dyr5;
-double dzr3, dzr4, dzr5;
+double xrNow, dxrNow, dxr5;
+double yrNow, dyrNow, dyr5;
+double yzNow, dzrNow, dzr5;
 
 
 //velocità filtrate con Thresold
@@ -503,6 +503,7 @@ Module0::initializeDataSaving() {
 		fs2 << "pitchoff\t";
 		fs2 << "ke1\tke2\t";
 		fs2 << "gravity\t";
+		fs2 << "xo\tyo\tzo\t";
 		fs2 << "thr_vel\n";
 
 
@@ -601,17 +602,19 @@ Module0::DoYourDuty(int wc)
 			cout << "********************************************" << endl;
 		}
 		else if (rxMsg->ReadType() == 5){
-			//nuovo ostacolo
+			//nuovo ostacolo wrt drone
 			double xo = *((double*)rxMsg->ReadData());
 			double yo = *((double*)((char*)(rxMsg->ReadData()) + sizeof(double)));
 			double zo = *((double*)((char*)(rxMsg->ReadData()) + 2 * sizeof(double)));
-			xo = xr - xo;
-			yo = yo- yr;
-			zo = zr - zo;
-			//Obstacle *obs = new Obstacle(xo, yo, zo, 10, 0.25);
-			//Obstacles.push_back(obs);
-			cout << "Drone              Posizione: " << dxr3 << " " << dyr3 << " " << dzr3 << "\n";
+			xo = xrNow - xo;
+			yo = yoNow- yr;
+			zo = zrNow - zo;
+			Obstacle *obs = new Obstacle(xo, yo, zo, 10, 0.25);
+			Obstacles.push_front(obs);
+			/*
+			cout << "Drone              Posizione: " << xrNow << " " << yrNow << " " << yzNow << "\n";
 			cout << "Ostacolo rilevato! Posizione: " << xo << " " << yo << " " << zo << "\n\n";
+			*/
 		}
 		else if (rxMsg->ReadType() == 3)
 		{
@@ -645,12 +648,12 @@ Module0::DoYourDuty(int wc)
 
 			PredizioneStato(pos, vel, RITARDO);
 
-			dxr3 = xr;
-			dyr3 = yr;
-			dzr3 = zr;
-			dxr4 = dxr;
-			dyr4 = dyr;
-			dzr4 = dzr;
+			xrNow = xr;
+			yrNow = yr;
+			yzNow = zr;
+			dxrNow = dxr;
+			dyrNow = dyr;
+			dzrNow = dzr;
 
 			xr = pos[0];
 			yr = pos[1];
@@ -1006,8 +1009,8 @@ Module0::DoYourDuty(int wc)
 			fs2 << dxrT << "\t" << dyrT << "\t" << dzrT << "\t";
 			fs2 << dxrUn << "\t" << dyrUn << "\t" << dzrUn << "\t";
 			
-			fs2 << dxr3 << "\t" << dyr3 << "\t" << dzr3 << "\t";
-			fs2 << dxr4 << "\t" << dyr4 << "\t" << dzr4 << "\t";
+			fs2 << xrNow << "\t" << yrNow << "\t" << yzNow << "\t";
+			fs2 << dxrNow << "\t" << dyrNow << "\t" << dzrNow << "\t";
 			/*fs2 << dxr5 << "\t" << dyr5 << "\t" << dzr5 << "\t";
 			*/
 			fs2 << contrx[0] << "\t" << contry[0] << "\t" << contrz[0] << "\t";
@@ -1046,6 +1049,7 @@ Module0::DoYourDuty(int wc)
 			fs2 << pitchOffset << "\t";
 			fs2 << ke1 << "\t" << ke2 << "\t";
 			fs2 << gravity << "\t";
+			fs2 << (Obstacles.front())->x << "\t" << (Obstacles.front())->y << "\t" << (Obstacles.front())->z << "\t";
 			fs2 << thr_vel;
 			fs2 << "\n";
 

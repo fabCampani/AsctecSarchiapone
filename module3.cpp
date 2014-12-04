@@ -340,6 +340,9 @@ if (wc)  return;
 		aPsi_back=aPsi;
 
 		for (int m =(TheMarkers.size()-1);m>=0;m--) {
+			if (TheMarkers[m].id == 1021){
+				continue;
+			}
 			cv::Rodrigues(TheMarkers[m].Rvec, Rcv); // R is 3x3
 			Rcv = Rcv.t();  // rotation of inverse
 			TheMarkers[m].Tvec = -Rcv * TheMarkers[m].Tvec; // translation of inverse
@@ -377,9 +380,6 @@ if (wc)  return;
 			 xr = xom + xc;
 			 yr = yom + yc;
 			 zr = zom + zc;
-			 if (TheMarkers[m].id == 1021){
-				 cout << "Le telecamere hanno trovato il marker: x, y, z:" << xr << " " << yr << " " << zr << endl;
-			 }
 			switch(TheMarkers[m].id){
 				case 65:
                     x_ext[0]=xr;

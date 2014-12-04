@@ -139,7 +139,6 @@ Module5::DoYourDuty(int wc)
 {
 
 	if (wc)  return;
-	return;
 	sem_wait(&mutex);
 	if (TheMarkersOriginal.size() == 0){
 		myarucoGrabCycle();
@@ -163,8 +162,7 @@ Module5::DoYourDuty(int wc)
 		psi = 0.001 * (double)(angle_yaw)*M_PI / 180.0;
 		//robot position backup
 		for (int m = (TheMarkers2.size() - 1); m >= 0; m--) {
-			if (TheMarkers2[m].id == OBSTACLE_ID){
-				
+			if (TheMarkers2[m].id == OBSTACLE_ID){			
 				cv::Rodrigues(TheMarkers2[m].Rvec, Rcv2); // R is 3x3
 				Rcv2 = Rcv2.t();  // rotation of inverse
 				TheMarkers2[m].Tvec = -Rcv2 * TheMarkers2[m].Tvec; // translation of inverse
@@ -205,7 +203,7 @@ Module5::DoYourDuty(int wc)
 				xr = xom + xc;
 				yr = yom + yc;
 				zr = zom + zc;
-				cout << "Le telecamere hanno trovato il marker: x, y, z:" << xr << " " << yr << " " << zr << endl;
+				//cout << "Le telecamere hanno trovato il marker: x, y, z:" << xr << " " << yr << " " << zr << endl;
 			}
 
 		}
@@ -222,8 +220,7 @@ Module5::DoYourDuty(int wc)
 			*((double*)txMessage->GetData()) = xr;
 			*((double*)((char*)(txMessage->GetData()) + sizeof(double))) = yr;
 			*((double*)((char*)(txMessage->GetData()) + 2 * sizeof(double))) = zr;
-			ShareMsg(txMessage);
-			
+			ShareMsg(txMessage);			
 		}
 	}
 	message_sent++;
