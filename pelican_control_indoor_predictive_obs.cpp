@@ -253,23 +253,28 @@ void PredizioneStato(double* vPos, double* vVel, int delay)
 		cumulz_pred += z_error_pred * t_medio;
 
 		cumuldx_pred += dx_error_pred * t_medio;
-		cumuldy_pred += dx_error_pred * t_medio;
-		cumuldz_pred += dy_error_pred * t_medio;
+		cumuldy_pred += dy_error_pred * t_medio;
+		cumuldz_pred += dz_error_pred * t_medio;
 	}
 
+	double k1 = 1;
+	double k2 = 1;
+	double k3 = 1;
+	double kd1 = 1;
+	double kd2 = 1;
+	double kd3 = 1;
+	vPos[0] = x_att + k1*cumulx_pred;
+	vVel[0] = vx_att + kd1*cumuldx_pred;
+	vPos[1] = y_att + k2*cumuly_pred;
+	vVel[1] = vy_att + kd2*cumuldy_pred;
+	//vPos[2] = z_att + k3*cumulz_pred;
+	//vVel[2] = vz_att + kd3*cumuldz_pred;
+	
 	/*
-	vPos[0] = x_att + cumulx_error_pred;
-	vVel[0] = vx_att + cumuldx_error_pred;
-	vPos[1] = y_att + cumuly_error_pred;
-	vVel[1] = vy_att + cumuldy_error_pred;
-	vPos[2] = z_att + cumulz_error_pred;
-	vVel[2] = vz_att + cumuldz_error_pred;
-	*/
-
 	vPos[0] = x_att;
 	vVel[0] = vx_att;
 	vPos[1] = y_att;
-	vVel[1] = vy_att;
+	vVel[1] = vy_att;*/
 	vPos[2] = z_att;
 	vVel[2] = vz_att;
 	
@@ -312,15 +317,15 @@ void printList(){
 
 double gauss(double x, double y, double center_x, double center_y)
 {
-	double a =5;
-	double var = 5;
+	double a = 0.8;
+	double var = 1;
 
 	return a*exp((-pow((x - center_x),2) - pow((y - center_y),2)) / pow(var,2));
 }
 
 //funzione ricorsiva
 double funzione(double x, double y, double z, list<Obstacle*> punti_prec){
-	
+
 	if (punti_prec.empty()){
 		return array_function[Nfunc1](x, y, z);
 	}
@@ -347,7 +352,7 @@ double obstacleAdder(double x_coordinate, double y_coordinate, double livello)
 
 	double livello_influenzato = livello;
 
-	for (it = Obstacles.begin(), itsign= sign.begin(); it != Obstacles.end(); ++it, ++itsign)
+	for (it = Obstacles.begin(); it != Obstacles.end(); ++it)
 	{
 		//calcolo curva di livello su ostacolo
 		livello_ostacolo = array_function[Nfunc1]((*it)->x, (*it)->y, (*it)->z);
@@ -371,13 +376,12 @@ double obstacleAdder(double x_coordinate, double y_coordinate, double livello)
 
 
 		//il nuovo livello è dato da il livello influenzato precedentemente e la nuova gaussiana "SUPERCAZZOLA"
-		livello_influenzato = livello_influenzato + (*itsign) * gauss(x_coordinate, y_coordinate, (*it)->x, (*it)->y);
+		livello_influenzato = livello_influenzato + sign.back() * gauss(x_coordinate, y_coordinate, (*it)->x, (*it)->y);
 	}
 
 	return livello_influenzato;
 
 }
-
 
 
 // debug function -- the parameters can be printed to check if they were correctly loaded.
@@ -389,6 +393,14 @@ Module0::printParams() {
 //Caricamento parametri (da file params2.txt se esiste)
 void
 Module0::loadParams() {
+	double xo = -2;
+	double yo = -1;
+	double zo = 0;
+	/*
+	Obstacle *obs = new Obstacle(xo, yo, zo, 3600, 0.25);
+	//cout << "prova push" << endl;
+	Obstacles.push_front(obs);
+	*/
 	kpvx = -760;
 	kpvy = 760;
 	kpvz = -550.0;
@@ -534,6 +546,7 @@ Module0::initializeDataSaving() {
 		fs2 << "time \t";
 		fs2 << "e1\t";
 		fs2 << "e2\t";
+		fs2 << "e1Ori\t";
 		fs2 << "ctrlpitch\t";
 		fs2 << "ctrlroll\t";
 		fs2 << "ctrlthrust\t";
@@ -702,13 +715,20 @@ Module0::DoYourDuty(int wc)
 			//drone wtr new obstacle
 			//Per ora numero di punti fisso
 			int DIM_OBS = 10;
-			double thr_dim = 00.5;
+			double thr_dim = 0.5;
+			/*
 			double xo = *((double*)rxMsg->ReadData());
 			double yo = *((double*)((char*)(rxMsg->ReadData()) + sizeof(double)));
 			double zo = *((double*)((char*)(rxMsg->ReadData()) + 2 * sizeof(double)));
+			*/
+			double xo = -2;
+			double yo = -1.20;
+			double zo = 0;
+			/*
 			xo = xrNow - xo;
 			yo = yrNow- yr;
 			zo = zrNow - zo;
+			*/
 			//cout << "prova" << endl;
 			//DIstance: sqrt(pow(xr - xr_back, 2) + pow(yr - yr_back, 2) + pow(zr - zr_back, 2)) < thr_dim
 			list<Obstacle*>::iterator it;
@@ -717,7 +737,7 @@ Module0::DoYourDuty(int wc)
 					(*it)->x = (((*it)-> x) + 1 / 4 * xo) / 1.25;
 					(*it)->y = (((*it)-> y) + 1 / 4 * yo) / 1.25;
 					(*it)->z = (((*it)-> z) + 1 / 4 * zo) / 1.25;*/
-					(*it)->time = 10;
+					(*it)->time = 100;
 					flag = false;
 					break;
 				}
@@ -726,7 +746,11 @@ Module0::DoYourDuty(int wc)
 			if (flag){
 				Obstacle *obs = new Obstacle(xo, yo, zo, 10, 0.25);
 				//cout << "prova push" << endl;
-				Obstacles.push_front(obs);
+				//Obstacles.push_front(obs);
+				
+				cout << "Drone              Posizione: " << xrNow << " " << yrNow << " " << zrNow << "\n";
+				cout << "Ostacolo rilevato! Posizione: " << xo << " " << yo << " " << zo << "\n\n";
+				
 				//cout << "prova push ok" << endl;
 				if (ostacoli < DIM_OBS)
 					ostacoli++;
@@ -735,10 +759,7 @@ Module0::DoYourDuty(int wc)
 					Obstacles.pop_back();
 				}
 			}
-			/*
-			cout << "Drone              Posizione: " << xrNow << " " << yrNow << " " << zrNow << "\n";
-			cout << "Ostacolo rilevato! Posizione: " << xo << " " << yo << " " << zo << "\n\n";
-			*/
+
 		}
 		else if (rxMsg->ReadType() == 3)
 		{
@@ -872,7 +893,7 @@ Module0::DoYourDuty(int wc)
 
 	//Remove old (elimazione di osctacoli vecchi)
 	removeOld(mtime);
-	printList();
+	//printList();
 
 	if ((initialize == 0) | (ended == 1))
 	{
@@ -891,7 +912,11 @@ Module0::DoYourDuty(int wc)
 		array_fgrad[Nfunc1](grad1, xr, yr, zr);
 		array_fgrad[Nfunc2](grad2, xr, yr, zr);
 
-		e1 = obstacleAdder(xr,yr,e1);
+		dxr5 = e1;
+		double funcRico = funzione(xr, yr, zr, Obstacles);
+		double funcIter = obstacleAdder(xr, yr, e1);
+
+		e1 = funcRico;
 
 		//Soglia errore
 		if (e1 > thre1){
@@ -1126,6 +1151,7 @@ Module0::DoYourDuty(int wc)
 		if (fs2.is_open()){
 			fs2 << accum_time << "\t";
 			fs2 << e1 << "\t" << e2 << "\t";
+			fs2 << dxr5 << "\t";
 			fs2 << CTRL_pitch << "\t" << CTRL_roll << "\t" << CTRL_thrust << "\t" << CTRL_yaw << "\t";
 			//fs2 << longitude << "\t" << latitude << "\t" << height << "\t";
 			//fs2 << fus_longitude << "\t" << fus_latitude << "\t" << fus_height << "\t";
@@ -1154,8 +1180,8 @@ Module0::DoYourDuty(int wc)
 			//fs2 << kpvxMod << "\t" << kpvyMod << "\t";
 
 			fs2 << ax << "\t" << ay << "\t" << az << "\t";
-			fs2 << x_error_pred << "\t" << y_error_pred << "\t" << z_error_pred << "\t";
-			fs2 << dx_error_pred << "\t" << dy_error_pred << "\t" << dz_error_pred << "\t";
+			fs2 << cumulx_pred << "\t" << cumuly_pred << "\t" << cumulz_pred << "\t";
+			fs2 << cumuldx_pred << "\t" << cumuldy_pred << "\t" << cumuldz_pred << "\t";
 
 			fs2 << theta << "\t" << phi << "\t" << yawr << "\t";
 			fs2 << yawd << "\t" << eyaw << "\t";
