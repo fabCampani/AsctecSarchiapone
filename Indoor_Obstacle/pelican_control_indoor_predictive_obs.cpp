@@ -85,9 +85,7 @@ double edz;
 
 double xrNow, dxrNow, dxr5;
 double yrNow, dyrNow, dyr5;
-double zrNow, dzrNow, dzr5;
-
-int ostacoli = 0;
+double yzNow, dzrNow, dzr5;
 
 
 //velocità filtrate con Thresold
@@ -239,39 +237,38 @@ void PredizioneStato(double* vPos, double* vVel, int delay)
 	dy_past_pred[0] = vy_att;
 	dz_past_pred[0] = vz_att;
 
-	if (x_past_pred[RITARDO - 1] != 0){
-		//Calcolo errori di predizione
-		x_error_pred = vPos[0] - x_past_pred[RITARDO - 1];
-		y_error_pred = vPos[1] - y_past_pred[RITARDO - 1];
-		z_error_pred = vPos[2] - z_past_pred[RITARDO - 1];
-		dx_error_pred = vVel[0] - dx_past_pred[RITARDO - 1];
-		dy_error_pred = vVel[1] - dy_past_pred[RITARDO - 1];
-		dz_error_pred = vVel[2] - dz_past_pred[RITARDO - 1];
+	//Calcolo errori di preda
+	x_error_pred = vPos[0] - x_past_pred[RITARDO - 1];
+	y_error_pred = vPos[1] - y_past_pred[RITARDO - 1];
+	z_error_pred = vPos[2] - z_past_pred[RITARDO - 1];
+	dx_error_pred = vVel[0] - dx_past_pred[RITARDO - 1];
+	dy_error_pred = vVel[1] - dy_past_pred[RITARDO - 1];
+	dz_error_pred = vVel[2] - dz_past_pred[RITARDO - 1];
 
-		cumulx_pred += x_error_pred * t_medio;
-		cumuly_pred += y_error_pred * t_medio;
-		cumulz_pred += z_error_pred * t_medio;
+	cumulx_pred += x_error_pred * t_medio;
+	cumuly_pred += y_error_pred * t_medio;
+	cumulz_pred += z_error_pred * t_medio;
 
-		cumuldx_pred += dx_error_pred * t_medio;
-		cumuldy_pred += dx_error_pred * t_medio;
-		cumuldz_pred += dy_error_pred * t_medio;
-	}
+	cumuldx_pred += dx_error_pred;
+	cumuldy_pred += dx_error_pred;
+	cumuldz_pred += dy_error_pred;
+
 
 	/*
-	vPos[0] = x_att + cumulx_error_pred;
-	vVel[0] = vx_att + cumuldx_error_pred;
-	vPos[1] = y_att + cumuly_error_pred;
-	vVel[1] = vy_att + cumuldy_error_pred;
-	vPos[2] = z_att + cumulz_error_pred;
-	vVel[2] = vz_att + cumuldz_error_pred;
+	vPos[0] = x_att + x_error_pred;
+	vVel[0] = vx_att + dx_error_pred;
+	vPos[1] = y_att + y_error_pred;
+	vVel[1] = vy_att + dy_error_pred;
+	vPos[2] = z_att + z_error_pred;
+	vVel[2] = vz_att + dz_error_pred;
 	*/
-
+	
 	vPos[0] = x_att;
 	vVel[0] = vx_att;
-	vPos[1] = y_att;
-	vVel[1] = vy_att;
-	vPos[2] = z_att;
-	vVel[2] = vz_att;
+	vPos[1]=y_att;
+	vVel[1]=vy_att;
+	vPos[2]=z_att;
+	vVel[2]=vz_att;
 	
 }
 //Roba che inutile ma che c'è
@@ -280,85 +277,6 @@ void initializeVett(double *vett, int lenght){
 	{
 		vett[i] = 0;
 	}
-}
-
-void removeOld(double timeInterval){
-	list<Obstacle*>::iterator it;
-		for(it = Obstacles.begin(); it != Obstacles.end(); ){
-			(*it)->time -= timeInterval;
-			if ((*it)->time < 0){
-				it = Obstacles.erase(it);
-				ostacoli--;
-			}
-			else
-				it++;
-	}
-}
-
-void printList(){
-	ofstream fso("ostacoli.txt", std::ofstream::out | std::ofstream::app);
-
-	if (fso.is_open()){
-		list<Obstacle*>::iterator it;
-		for (it = Obstacles.begin(); it != Obstacles.end(); ++it){
-			cout << (*it)->time << " ";
-			fso << (*it)->time << "\t" << (*it)->x << "\t" << (*it)->y << "\t" << (*it)->z << "\t";
-		}
-		fso << "\n";
-		cout << Obstacles.size() << endl;
-	}
-
-}
-
-double gauss(double x, double y, double center_x, double center_y)
-{
-	double a =5;
-	double var = 5;
-
-	return a*exp((-pow((x - center_x),2) - pow((y - center_y),2)) / pow(var,2));
-}
-
-
-double obstacleAdder(double x_coordinate, double y_coordinate, double livello)
-{
-
-	list<int> sign;
-	list<Obstacle*>::iterator it;
-	list<Obstacle*>::iterator itback;
-	list<int>::iterator itsign;
-	double livello_ostacolo;
-
-	double livello_influenzato = livello;
-
-	for(it = Obstacles.begin(); it != Obstacles.end(); ++it)
-	{
-		//calcolo curva di livello su ostacolo
-		livello_ostacolo = array_function[Nfunc1]((*it)->x, (*it)->y, (*it)->z);
-
-		for (itback = Obstacles.begin(), itsign = sign.begin(); it != itback; ++itback, ++itsign)
-		{
-			//aggiungo le influenze delle gaussiane associate degli altri ostacoli
-			livello_ostacolo = livello_ostacolo + (*itsign) * gauss((*it)->x, (*it)->y, (*itback)->x, (*itback)->y);
-		}
-
-
-		//mi salvo il segno della gaussiana
-		if (livello_influenzato > livello_ostacolo)
-		{
-			sign.push_back(-1);
-		}
-		else
-		{
-			sign.push_back(1);
-		}
-
-
-		//il nuovo livello è dato da il livello influenzato precedentemente e la nuova gaussiana "SUPERCAZZOLA"
-		livello_influenzato = livello_influenzato + (*itsign) * gauss(x_coordinate, y_coordinate, (*it)->x, (*it)->y);
-	}
-
-	return livello_influenzato;
-
 }
 
 
@@ -510,7 +428,7 @@ Module0::loadParams() {
 //A text file to save the parameters is initialized with the variables to be saved
 void
 Module0::initializeDataSaving() {
-	ofstream fso("ostacoli.txt", std::ofstream::out | std::ofstream::trunc);
+
 	ofstream fs2("dataasctec.txt", std::ofstream::out | std::ofstream::trunc);
 
 	if (fs2.is_open()){
@@ -585,7 +503,10 @@ Module0::initializeDataSaving() {
 		fs2 << "pitchoff\t";
 		fs2 << "ke1\tke2\t";
 		fs2 << "gravity\t";
-		fs2 << "thr_vel\n";		
+		fs2 << "xo\tyo\tzo\t";
+		fs2 << "thr_vel\n";
+
+
 
 		cout << "File with controls initialized" << endl;
 	}
@@ -681,45 +602,17 @@ Module0::DoYourDuty(int wc)
 			cout << "********************************************" << endl;
 		}
 		else if (rxMsg->ReadType() == 5){
-			bool flag = true;
-			//drone wtr new obstacle
-			//Per ora numero di punti fisso
-			int DIM_OBS = 10;
-			double thr_dim = 00.5;
+			//nuovo ostacolo wrt drone
 			double xo = *((double*)rxMsg->ReadData());
 			double yo = *((double*)((char*)(rxMsg->ReadData()) + sizeof(double)));
 			double zo = *((double*)((char*)(rxMsg->ReadData()) + 2 * sizeof(double)));
 			xo = xrNow - xo;
-			yo = yrNow- yr;
+			yo = yoNow- yr;
 			zo = zrNow - zo;
-			//cout << "prova" << endl;
-			//DIstance: sqrt(pow(xr - xr_back, 2) + pow(yr - yr_back, 2) + pow(zr - zr_back, 2)) < thr_dim
-			list<Obstacle*>::iterator it;
-			for (it = Obstacles.begin(); it != Obstacles.end(); ++it){
-				if (sqrt(pow((*it)->x - xo, 2) + pow((*it)->y - yo, 2)) < thr_dim){/*
-					(*it)->x = (((*it)-> x) + 1 / 4 * xo) / 1.25;
-					(*it)->y = (((*it)-> y) + 1 / 4 * yo) / 1.25;
-					(*it)->z = (((*it)-> z) + 1 / 4 * zo) / 1.25;*/
-					(*it)->time = 10;
-					flag = false;
-					break;
-				}
-			}
-			
-			if (flag){
-				Obstacle *obs = new Obstacle(xo, yo, zo, 10, 0.25);
-				//cout << "prova push" << endl;
-				Obstacles.push_front(obs);
-				//cout << "prova push ok" << endl;
-				if (ostacoli < DIM_OBS)
-					ostacoli++;
-				else{
-					//cout << "prova pop" << endl;
-					Obstacles.pop_back();
-				}
-			}
+			Obstacle *obs = new Obstacle(xo, yo, zo, 10, 0.25);
+			Obstacles.push_front(obs);
 			/*
-			cout << "Drone              Posizione: " << xrNow << " " << yrNow << " " << zrNow << "\n";
+			cout << "Drone              Posizione: " << xrNow << " " << yrNow << " " << yzNow << "\n";
 			cout << "Ostacolo rilevato! Posizione: " << xo << " " << yo << " " << zo << "\n\n";
 			*/
 		}
@@ -757,7 +650,7 @@ Module0::DoYourDuty(int wc)
 
 			xrNow = xr;
 			yrNow = yr;
-			zrNow = zr;
+			yzNow = zr;
 			dxrNow = dxr;
 			dyrNow = dyr;
 			dzrNow = dzr;
@@ -853,9 +746,6 @@ Module0::DoYourDuty(int wc)
 	accum_time = accum_time + mtime;
 	gettimeofday(&starttime2, NULL);
 
-	//Remove old (elimazione di osctacoli vecchi)
-	removeOld(mtime);
-	printList();
 
 	if ((initialize == 0) | (ended == 1))
 	{
@@ -873,8 +763,6 @@ Module0::DoYourDuty(int wc)
 
 		array_fgrad[Nfunc1](grad1, xr, yr, zr);
 		array_fgrad[Nfunc2](grad2, xr, yr, zr);
-
-		e1 = obstacleAdder(xr,yr,e1);
 
 		//Soglia errore
 		if (e1 > thre1){
@@ -1121,7 +1009,7 @@ Module0::DoYourDuty(int wc)
 			fs2 << dxrT << "\t" << dyrT << "\t" << dzrT << "\t";
 			fs2 << dxrUn << "\t" << dyrUn << "\t" << dzrUn << "\t";
 			
-			fs2 << xrNow << "\t" << yrNow << "\t" << zrNow << "\t";
+			fs2 << xrNow << "\t" << yrNow << "\t" << yzNow << "\t";
 			fs2 << dxrNow << "\t" << dyrNow << "\t" << dzrNow << "\t";
 			/*fs2 << dxr5 << "\t" << dyr5 << "\t" << dzr5 << "\t";
 			*/
@@ -1161,6 +1049,7 @@ Module0::DoYourDuty(int wc)
 			fs2 << pitchOffset << "\t";
 			fs2 << ke1 << "\t" << ke2 << "\t";
 			fs2 << gravity << "\t";
+			fs2 << (Obstacles.front())->x << "\t" << (Obstacles.front())->y << "\t" << (Obstacles.front())->z << "\t";
 			fs2 << thr_vel;
 			fs2 << "\n";
 

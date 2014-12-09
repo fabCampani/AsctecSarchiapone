@@ -13,9 +13,7 @@
 #define ez_thr 2.5
 #define integrativeok 1.5
 
-#define RITARDO 10
-#define DEFAULTTIME 10
-#define DEFAULTSIZE 0.20
+#define RITARDO 30
 
 //asctec
 #include "asctecCommIntf.h"
@@ -42,13 +40,10 @@
 #include "module0.h"
 #include "functions.h"
 
-#include <list>
-#include "Obstacle.h"
-
 using namespace std;
 using namespace cv;
 
-struct timeval starttime2, endtime2;  // variables for the timing epredation
+struct timeval starttime2, endtime2;  // variables for the timing estimation
 
 ///GLOBAL VARIABLES (defined in module2.cpp). VARIABLES AND COMMAND FROM AND TO THE ROBOT (Serial Interface)
 extern int16_t CTRL_pitch;
@@ -68,9 +63,30 @@ extern int16_t acc_y;
 extern int16_t acc_z;
 //////////////////////
 
+extern int32_t GPS_latitude;
+extern int32_t GPS_longitude;
+extern int32_t GPS_height;
+extern int32_t fusion_latitude;
+extern int32_t fusion_longitude;
+extern int32_t fusion_height;
+extern int32_t GPS_heading;
+extern u_int32_t position_accuracy;
+extern u_int32_t height_accuracy;
+extern u_int32_t GPS_num;
+extern int32_t GPS_status;
+extern int32_t fusion_speed_x;
+extern int32_t fusion_speed_y;
+extern int32_t fusion_speed_z;
+extern int32_t GPS_speed_x;
+extern int32_t GPS_speed_y;
+
+
 
 #define LANDING 95
 
+//OFFSET coordinate GPS
+double lat_off, long_off, height_off;
+bool flag_off = false;
 
 //Tipo di funzione
 int Nfunc1;
@@ -83,11 +99,9 @@ double edy;
 double edz;
 
 
-double xrNow, dxrNow, dxr5;
-double yrNow, dyrNow, dyr5;
-double zrNow, dzrNow, dzr5;
-
-int ostacoli = 0;
+double dxr3, dxr4, dxr5;
+double dyr3, dyr4, dyr5;
+double dzr3, dzr4, dzr5;
 
 
 //velocità filtrate con Thresold
@@ -106,7 +120,6 @@ double Perpx, Perpy, Perpz;
 
 double kpvxMod, kpvyMod;
 
-
 //ROBA
 double last_time = 0;
 double timeVec[RITARDO];
@@ -114,33 +127,8 @@ double contrx[RITARDO];
 double contry[RITARDO];
 double contrz[RITARDO];
 bool telecamere;
-//Roba Errore Predizione
-double x_past_pred[RITARDO];
-double y_past_pred[RITARDO];
-double z_past_pred[RITARDO];
 
-double dx_past_pred[RITARDO];
-double dy_past_pred[RITARDO];
-double dz_past_pred[RITARDO];
 
-double x_error_pred;
-double y_error_pred;
-double z_error_pred;
-double dx_error_pred;
-double dy_error_pred;
-double dz_error_pred;
-
-double cumulx_pred = 0;
-double cumuly_pred = 0;
-double cumulz_pred = 0;
-
-double cumuldx_pred = 0;
-double cumuldy_pred = 0;
-double cumuldz_pred = 0;
-
-//ostacoli
-
-list<Obstacle*> Obstacles;
 
 //Funzione normallizzazione vettori
 void normalize1(double *vett){
@@ -173,7 +161,6 @@ double media(double *vett, int lenght){
 
 void PredizioneStato(double* vPos, double* vVel, int delay)
 {
-	
 	double x_att = vPos[0];
 	double vx_att = vVel[0];
 	double y_att = vPos[1];
@@ -220,59 +207,15 @@ void PredizioneStato(double* vPos, double* vVel, int delay)
 		az = contrz[delay - j - 1];
 	}
 
-	//----Errore di preda
-	//Shift vettori
-	for (int i = RITARDO - 1; i >0; i--)
-	{
-		x_past_pred[i] = x_past_pred[i - 1];
-		y_past_pred[i] = y_past_pred[i - 1];
-		z_past_pred[i] = z_past_pred[i - 1];
-		dx_past_pred[i] = dx_past_pred[i - 1];
-		dy_past_pred[i] = dy_past_pred[i - 1];
-		dz_past_pred[i] = dz_past_pred[i - 1];
-	}
-	
-	x_past_pred[0] = x_att;
-	y_past_pred[0] = y_att;
-	z_past_pred[0] = z_att;
-	dx_past_pred[0] = vx_att;
-	dy_past_pred[0] = vy_att;
-	dz_past_pred[0] = vz_att;
-
-	if (x_past_pred[RITARDO - 1] != 0){
-		//Calcolo errori di predizione
-		x_error_pred = vPos[0] - x_past_pred[RITARDO - 1];
-		y_error_pred = vPos[1] - y_past_pred[RITARDO - 1];
-		z_error_pred = vPos[2] - z_past_pred[RITARDO - 1];
-		dx_error_pred = vVel[0] - dx_past_pred[RITARDO - 1];
-		dy_error_pred = vVel[1] - dy_past_pred[RITARDO - 1];
-		dz_error_pred = vVel[2] - dz_past_pred[RITARDO - 1];
-
-		cumulx_pred += x_error_pred * t_medio;
-		cumuly_pred += y_error_pred * t_medio;
-		cumulz_pred += z_error_pred * t_medio;
-
-		cumuldx_pred += dx_error_pred * t_medio;
-		cumuldy_pred += dx_error_pred * t_medio;
-		cumuldz_pred += dy_error_pred * t_medio;
-	}
-
-	/*
-	vPos[0] = x_att + cumulx_error_pred;
-	vVel[0] = vx_att + cumuldx_error_pred;
-	vPos[1] = y_att + cumuly_error_pred;
-	vVel[1] = vy_att + cumuldy_error_pred;
-	vPos[2] = z_att + cumulz_error_pred;
-	vVel[2] = vz_att + cumuldz_error_pred;
-	*/
 
 	vPos[0] = x_att;
 	vVel[0] = vx_att;
-	vPos[1] = y_att;
-	vVel[1] = vy_att;
-	vPos[2] = z_att;
-	vVel[2] = vz_att;
-	
+	vPos[1]=y_att;
+	vVel[1]=vy_att;
+	vPos[2]=z_att;
+	vVel[2]=vz_att;
+
+
 }
 //Roba che inutile ma che c'è
 void initializeVett(double *vett, int lenght){
@@ -280,85 +223,6 @@ void initializeVett(double *vett, int lenght){
 	{
 		vett[i] = 0;
 	}
-}
-
-void removeOld(double timeInterval){
-	list<Obstacle*>::iterator it;
-		for(it = Obstacles.begin(); it != Obstacles.end(); ){
-			(*it)->time -= timeInterval;
-			if ((*it)->time < 0){
-				it = Obstacles.erase(it);
-				ostacoli--;
-			}
-			else
-				it++;
-	}
-}
-
-void printList(){
-	ofstream fso("ostacoli.txt", std::ofstream::out | std::ofstream::app);
-
-	if (fso.is_open()){
-		list<Obstacle*>::iterator it;
-		for (it = Obstacles.begin(); it != Obstacles.end(); ++it){
-			cout << (*it)->time << " ";
-			fso << (*it)->time << "\t" << (*it)->x << "\t" << (*it)->y << "\t" << (*it)->z << "\t";
-		}
-		fso << "\n";
-		cout << Obstacles.size() << endl;
-	}
-
-}
-
-double gauss(double x, double y, double center_x, double center_y)
-{
-	double a =5;
-	double var = 5;
-
-	return a*exp((-pow((x - center_x),2) - pow((y - center_y),2)) / pow(var,2));
-}
-
-
-double obstacleAdder(double x_coordinate, double y_coordinate, double livello)
-{
-
-	list<int> sign;
-	list<Obstacle*>::iterator it;
-	list<Obstacle*>::iterator itback;
-	list<int>::iterator itsign;
-	double livello_ostacolo;
-
-	double livello_influenzato = livello;
-
-	for(it = Obstacles.begin(); it != Obstacles.end(); ++it)
-	{
-		//calcolo curva di livello su ostacolo
-		livello_ostacolo = array_function[Nfunc1]((*it)->x, (*it)->y, (*it)->z);
-
-		for (itback = Obstacles.begin(), itsign = sign.begin(); it != itback; ++itback, ++itsign)
-		{
-			//aggiungo le influenze delle gaussiane associate degli altri ostacoli
-			livello_ostacolo = livello_ostacolo + (*itsign) * gauss((*it)->x, (*it)->y, (*itback)->x, (*itback)->y);
-		}
-
-
-		//mi salvo il segno della gaussiana
-		if (livello_influenzato > livello_ostacolo)
-		{
-			sign.push_back(-1);
-		}
-		else
-		{
-			sign.push_back(1);
-		}
-
-
-		//il nuovo livello è dato da il livello influenzato precedentemente e la nuova gaussiana "SUPERCAZZOLA"
-		livello_influenzato = livello_influenzato + (*itsign) * gauss(x_coordinate, y_coordinate, (*it)->x, (*it)->y);
-	}
-
-	return livello_influenzato;
-
 }
 
 
@@ -410,7 +274,7 @@ Module0::loadParams() {
 	cumuly = 0,
 	cumulz = 0,
 	cumulyaw = 0;
-	pitchOffset = 170;  // pitch offset, manually epredd
+	pitchOffset = 170;  // pitch offset, manually estimated
 	rollOffset = 0;  // roll offset
 	yawOffset = 0;
 
@@ -445,19 +309,6 @@ Module0::loadParams() {
 	edx = 0;
 	edy = 0;
 	edz = 0;
-
-
-	//Inizializzazione Vettori per Predittore
-	initializeVett(timeVec, RITARDO);
-	initializeVett(contrx, RITARDO);
-	initializeVett(contry, RITARDO);
-	initializeVett(contrz, RITARDO);
-	initializeVett(x_past_pred, RITARDO);
-	initializeVett(y_past_pred, RITARDO);
-	initializeVett(z_past_pred, RITARDO);
-	initializeVett(dx_past_pred, RITARDO);
-	initializeVett(dy_past_pred, RITARDO);
-	initializeVett(dz_past_pred, RITARDO);
 	
 
 	//Carcamento parametri da file
@@ -510,7 +361,7 @@ Module0::loadParams() {
 //A text file to save the parameters is initialized with the variables to be saved
 void
 Module0::initializeDataSaving() {
-	ofstream fso("ostacoli.txt", std::ofstream::out | std::ofstream::trunc);
+
 	ofstream fs2("dataasctec.txt", std::ofstream::out | std::ofstream::trunc);
 
 	if (fs2.is_open()){
@@ -553,9 +404,6 @@ Module0::initializeDataSaving() {
 
 		fs2 << "ax\tay\taz\t";
 
-		fs2 << "err_sti_x\terr_sti_y\terr_sti_z\t";
-		fs2 << "err_sti_dx\terr_sti_dy\terr_sti_dz\t";
-
 		//fs2 << "dxNED\t";
 		//fs2 << "dyNED\t";
 		//fs2 << "dzNED\t";
@@ -585,7 +433,14 @@ Module0::initializeDataSaving() {
 		fs2 << "pitchoff\t";
 		fs2 << "ke1\tke2\t";
 		fs2 << "gravity\t";
-		fs2 << "thr_vel\n";		
+		fs2 << "thr_vel\t";
+
+		fs2 << "gps_accuracy\t";
+		fs2 << "height_accuracy\t";
+		fs2 << "gps_sat_num\t";
+		fs2 << "gps_status\n";
+
+
 
 		cout << "File with controls initialized" << endl;
 	}
@@ -610,9 +465,7 @@ Module0::Init()
 	message_rec = 0;
 	AddRequest(1); // user interface
 	AddRequest(2); // IMU
-	AddRequest(3); // positions
-	AddRequest(5); //obstacles
-
+	//AddRequest(3); // positions
 	SetActivationCondition(GetAllMsgTypeMask());
 	loadParams();
 	initializeDataSaving();
@@ -631,7 +484,6 @@ Module0::Init()
 	gps_flag = 0;
 	limit = 25;  // limits the streaming of ETHNOS messages 
 	count_ethnos = 0;
-	//Obstacles = new list< Obstacle >() ;
 }
 
 void
@@ -654,12 +506,12 @@ Module0::DoYourDuty(int wc)
 	double az = 9.81 - T/1.6; //Ma anche no
 
 	//Calcolo della matrice di rotazione ogni volta:
-	R[0] = cos(theta) * cos(yawr);
-	R[3] = -cos(phi) * sin(yawr) + sin(phi) * sin(theta) * cos(yawr);
-	R[6] = sin(phi) * sin(yawr) + cos(phi) * sin(theta) * cos(yawr);
-	R[1] = cos(theta) * sin(yawr);
-	R[4] = cos(phi) * cos(yawr) + sin(phi) * sin(theta) * sin(yawr);
-	R[7] = -sin(phi) * cos(yawr) + cos(phi) * sin(theta) * sin(yawr);
+	R[0] = cos(theta) * cos(psi);
+	R[3] = -cos(phi) * sin(psi) + sin(phi) * sin(theta) * cos(psi);
+	R[6] = sin(phi) * sin(psi) + cos(phi) * sin(theta) * cos(psi);
+	R[1] = cos(theta) * sin(psi);
+	R[4] = cos(phi) * cos(psi) + sin(phi) * sin(theta) * sin(psi);
+	R[7] = -sin(phi) * cos(psi) + cos(phi) * sin(theta) * sin(psi);
 	R[2] = -sin(theta);
 	R[5] = sin(phi) * cos(theta);
 	R[8] = cos(phi) * cos(theta);
@@ -676,168 +528,138 @@ Module0::DoYourDuty(int wc)
 			cout << "********************************************" << endl;
 			cout << "*         press P to take a picture        *" << endl;
 			cout << "* press K to change the control parameters *" << endl;
+			cout << "*       press o to set position offset     *" << endl;
 			cout << "*          press S to stop the motors      *" << endl;
 			cout << "*             press A to land              *" << endl;
 			cout << "********************************************" << endl;
-		}
-		else if (rxMsg->ReadType() == 5){
-			bool flag = true;
-			//drone wtr new obstacle
-			//Per ora numero di punti fisso
-			int DIM_OBS = 10;
-			double thr_dim = 00.5;
-			double xo = *((double*)rxMsg->ReadData());
-			double yo = *((double*)((char*)(rxMsg->ReadData()) + sizeof(double)));
-			double zo = *((double*)((char*)(rxMsg->ReadData()) + 2 * sizeof(double)));
-			xo = xrNow - xo;
-			yo = yrNow- yr;
-			zo = zrNow - zo;
-			//cout << "prova" << endl;
-			//DIstance: sqrt(pow(xr - xr_back, 2) + pow(yr - yr_back, 2) + pow(zr - zr_back, 2)) < thr_dim
-			list<Obstacle*>::iterator it;
-			for (it = Obstacles.begin(); it != Obstacles.end(); ++it){
-				if (sqrt(pow((*it)->x - xo, 2) + pow((*it)->y - yo, 2)) < thr_dim){/*
-					(*it)->x = (((*it)-> x) + 1 / 4 * xo) / 1.25;
-					(*it)->y = (((*it)-> y) + 1 / 4 * yo) / 1.25;
-					(*it)->z = (((*it)-> z) + 1 / 4 * zo) / 1.25;*/
-					(*it)->time = 10;
-					flag = false;
-					break;
-				}
-			}
-			
-			if (flag){
-				Obstacle *obs = new Obstacle(xo, yo, zo, 10, 0.25);
-				//cout << "prova push" << endl;
-				Obstacles.push_front(obs);
-				//cout << "prova push ok" << endl;
-				if (ostacoli < DIM_OBS)
-					ostacoli++;
-				else{
-					//cout << "prova pop" << endl;
-					Obstacles.pop_back();
-				}
-			}
-			/*
-			cout << "Drone              Posizione: " << xrNow << " " << yrNow << " " << zrNow << "\n";
-			cout << "Ostacolo rilevato! Posizione: " << xo << " " << yo << " " << zo << "\n\n";
-			*/
-		}
-		else if (rxMsg->ReadType() == 3)
-		{
-			/*
-			ax = 0;
-			ay = 0;
-			az = 0;
-			*/
-			xr = *((double*)rxMsg->ReadData());
-			yr = *((double*)((char*)(rxMsg->ReadData()) + sizeof(double)));
-			zr = *((double*)((char*)(rxMsg->ReadData()) + 2 * sizeof(double)));
-			yawr = *((double*)((char*)(rxMsg->ReadData()) + 3 * sizeof(double)));
-			dxr = *((double*)((char*)(rxMsg->ReadData()) + 4 * sizeof(double)));
-			dyr = *((double*)((char*)(rxMsg->ReadData()) + 5 * sizeof(double)));
-			dzr = *((double*)((char*)(rxMsg->ReadData()) + 6 * sizeof(double)));
-			dyawr = *((double*)((char*)(rxMsg->ReadData()) + 7 * sizeof(double)));
 
-			//Aggiornamento Rotation Matrix per angolo yaw (telecamere)
-			R[0] = cos(theta) * cos(yawr);
-			R[3] = -cos(phi) * sin(yawr) + sin(phi) * sin(theta) * cos(yawr);
-			R[6] = sin(phi) * sin(yawr) + cos(phi) * sin(theta) * cos(yawr);
-			R[1] = cos(theta) * sin(yawr);
-			R[4] = cos(phi) * cos(yawr) + sin(phi) * sin(theta) * sin(yawr);
-			R[7] = -sin(phi) * cos(yawr) + cos(phi) * sin(theta) * sin(yawr);
-			R[2] = -sin(theta);
-			R[5] = sin(phi) * cos(theta);
-			R[8] = cos(phi) * cos(theta);
-
-			double pos[3] = { xr, yr, zr };
-			double vel[3] = { dxr, dyr, dzr };
-
-			PredizioneStato(pos, vel, RITARDO);
-
-			xrNow = xr;
-			yrNow = yr;
-			zrNow = zr;
-			dxrNow = dxr;
-			dyrNow = dyr;
-			dzrNow = dzr;
-
-			xr = pos[0];
-			yr = pos[1];
-			zr = pos[2];
-			dxr = vel[0];
-			dyr = vel[1];
-			dzr = vel[2];
-
-			//Soglia velocità (filtro rumore)
-			//thr_vel = 0.08; //0.1 0.08 0.04
-			int i = 0;
-
-			if ((dxrDeb - dxr) > thr_vel){
-				dxrT = dxrDeb - thr_vel;
-			}
-			else if ((dxrDeb - dxr) < -thr_vel){
-				dxrT = dxrDeb + thr_vel;
-			}
-			else
-				dxrT = dxr;
-
-			if ((dyrDeb - dyr) > thr_vel){
-				dyrT = dyrDeb - thr_vel;
-			}
-			else if ((dyrDeb - dyr) < -thr_vel){
-				dyrT = dyrDeb + thr_vel;
-			}
-			else
-				dyrT = dyr;
-			if ((dzrDeb - dzr) > thr_vel){
-				dzrT = dzrDeb - thr_vel;
-			}
-			else if ((dzrDeb - dzr) < -thr_vel){
-				dzrT = dzrDeb + thr_vel;
-			}
-			else
-				dzrT = dzr;
-
-			//Valore precedente
-			dxrDeb = dxrT;
-			dyrDeb = dyrT;
-			dzrDeb = dzrT;
-
-			//velocità non filtrata
-			dxrUn = dxr;
-			dyrUn = dyr;
-			dzrUn = dzr;
-
-			//Assegnamento velocità reale (ORA NED)
-			dxr = dxrT;
-			dyr = dyrT;
-			dzr = dzrT;
-			
-			//NED -> drone
-			double dxr1 = R[0] * dxr + R[1] * dyr + R[2] * dzr;
-			double dyr1 = R[3] * dxr + R[4] * dyr + R[5] * dzr;
-			double dzr1 = R[6] * dxr + R[7] * dyr + R[8] * dzr;
-
-			dxr = dxr1;
-			dyr = dyr1;
-			dzr = dzr1;
-
-			telecamere = true;
-			for (int i = RITARDO-1; i >0; i--)
+			int recc = *rxMsg->ReadData();
+			if (recc == 94)
 			{
-				contrx[i] = contrx[i - 1];
-				contry[i] = contry[i - 1];
-				contrz[i] = contrz[i - 1];
-				timeVec[i] = timeVec[i - 1];
-				
+				lat_off = ((double)GPS_latitude*60.0*1852.0 / 10000000.0);
+				long_off = ((double)GPS_longitude*60.0*1852.0 / 10000000.0)*cos(((double)fusion_latitude*M_PI) / (10000000.0*180.0));
+				height_off = (double)fusion_height / 1000.0;
+				cout << fusion_longitude << "     " << long_off << endl;
+				cout << "*             height_off               *" << endl;
+				cout << "********************************************" << endl;
+
+				flag_off = true;
 			}
-			timeVec[0] = accum_time - last_time;
-			last_time = accum_time;
 		}
 	}
 	RemoveCurrentMsg();
+	//Dati da GPS
 
+	double xrGPS = (((double)fusion_latitude*60.0*1852.0 / 10000000.0) - lat_off);
+	double yrGPS = ((((double)fusion_longitude*60.0*1852.0 / 10000000.0)*(cos(((double)fusion_latitude*M_PI) / (10000000.0*180.0)))) - long_off);
+	double zrGPS = -(((double)fusion_height / 1000.0) - height_off);
+	/*
+	xr = (((double)GPS_latitude*60.0*1852.0 / 10000000.0) - lat_off);
+	yr = ((((double)GPS_longitude*60.0*1852.0 / 10000000.0)*(cos(((double)GPS_latitude*M_PI) / (10000000.0*180.0)))) - long_off);
+	zr = -(((double)fusion_height / 1000.0) - height_off);
+	*/
+	double dxrGPS = (double)fusion_speed_x / 1000;
+	double dyrGPS = (double)fusion_speed_y / 1000;
+
+	double dzrGPS = (double)fusion_speed_z / 1000;
+
+	/*
+	dxr = (double)GPS_speed_x / 1000;
+	dyr = (double)GPS_speed_y / 1000;
+	*/
+	//Se sono nuovi dati effettuo la previsione
+	if (true){		
+		//STIMATORE STATO successivo:
+		double pos[3] = { xrGPS, yrGPS, zrGPS };
+		double vel[3] = { dxrGPS, dyrGPS, dzrGPS };
+
+		PredizioneStato(pos, vel, RITARDO);
+
+		//non predetti
+		dxr3 = xrGPS;
+		dyr3 = yrGPS;
+		dzr3 = zrGPS;
+		dxr4 = dxrGPS;
+		dyr4 = dyrGPS;
+		dzr4 = dzrGPS;
+
+		//dati predetti
+		xr = pos[0];
+		yr = pos[1];
+		zr = pos[2];
+		dxr = vel[0];
+		dyr = vel[1];
+		dzr = vel[2];
+
+		telecamere = true;
+
+		for (int i = RITARDO - 1; i > 0; i--)
+		{
+			contrx[i] = contrx[i - 1];
+			contry[i] = contry[i - 1];
+			contrz[i] = contrz[i - 1];
+			timeVec[i] = timeVec[i - 1];
+
+		}
+		timeVec[0] = accum_time - last_time;
+		last_time = accum_time;
+	}
+
+	//Soglia velocità (filtro rumore)
+	//thr_vel = 0.08; //0.1 0.08 0.04
+	int i = 0;
+
+	if ((dxrDeb - dxr) > thr_vel){
+		dxrT = dxrDeb - thr_vel;
+	}
+	else if ((dxrDeb - dxr) < -thr_vel){
+		dxrT = dxrDeb + thr_vel;
+	}
+	else
+		dxrT = dxr;
+
+	if ((dyrDeb - dyr) > thr_vel){
+		dyrT = dyrDeb - thr_vel;
+	}
+	else if ((dyrDeb - dyr) < -thr_vel){
+		dyrT = dyrDeb + thr_vel;
+	}
+	else
+		dyrT = dyr;
+	if ((dzrDeb - dzr) > thr_vel){
+		dzrT = dzrDeb - thr_vel;
+	}
+	else if ((dzrDeb - dzr) < -thr_vel){
+		dzrT = dzrDeb + thr_vel;
+	}
+	else
+		dzrT = dzr;
+
+	//Valore precedente
+	dxrDeb = dxrT;
+	dyrDeb = dyrT;
+	dzrDeb = dzrT;
+
+	//velocità non filtrata
+	dxrUn = dxr;
+	dyrUn = dyr;
+	dzrUn = dzr;
+
+	//Assegnamento velocità reale (ORA NED)
+	dxr = dxrT;
+	dyr = dyrT;
+	dzr = dzrT;
+
+	//NED -> drone
+	double dxr1 = R[0] * dxr + R[1] * dyr + R[2] * dzr;
+	double dyr1 = R[3] * dxr + R[4] * dyr + R[5] * dzr;
+	double dzr1 = R[6] * dxr + R[7] * dyr + R[8] * dzr;
+
+	dxr = dxr1;
+	dyr = dyr1;
+	dzr = dzr1;
+	
+	
 	//Previsione velocità attuale (con angolo attuale)	
 	/*
 	dxr += ax*mtime;
@@ -853,9 +675,6 @@ Module0::DoYourDuty(int wc)
 	accum_time = accum_time + mtime;
 	gettimeofday(&starttime2, NULL);
 
-	//Remove old (elimazione di osctacoli vecchi)
-	removeOld(mtime);
-	printList();
 
 	if ((initialize == 0) | (ended == 1))
 	{
@@ -873,8 +692,6 @@ Module0::DoYourDuty(int wc)
 
 		array_fgrad[Nfunc1](grad1, xr, yr, zr);
 		array_fgrad[Nfunc2](grad2, xr, yr, zr);
-
-		e1 = obstacleAdder(xr,yr,e1);
 
 		//Soglia errore
 		if (e1 > thre1){
@@ -966,11 +783,7 @@ Module0::DoYourDuty(int wc)
 			dyd = 0;
 			dzd = 0;
 		}
-		/*
-		dxd -= dx_error_pred;
-		dyd -= dy_error_pred;
-		dzd -= dz_error_pred;
-		*/
+
 		edx = dxd - dxr;
 		edy = dyd - dyr;
 		edz = dzd - dzr;
@@ -1090,6 +903,7 @@ Module0::DoYourDuty(int wc)
 
 		
 		//CONVERSIONE
+		
 		if (telecamere)
 		{
 			T = CTRL_thrust* 9.81 / gravity;
@@ -1099,7 +913,7 @@ Module0::DoYourDuty(int wc)
 			contrz[0] = (9.81 - T )/ peso;
 			telecamere = false;
 		}
-
+		
 	}
 
 	// data saving
@@ -1121,8 +935,8 @@ Module0::DoYourDuty(int wc)
 			fs2 << dxrT << "\t" << dyrT << "\t" << dzrT << "\t";
 			fs2 << dxrUn << "\t" << dyrUn << "\t" << dzrUn << "\t";
 			
-			fs2 << xrNow << "\t" << yrNow << "\t" << zrNow << "\t";
-			fs2 << dxrNow << "\t" << dyrNow << "\t" << dzrNow << "\t";
+			fs2 << dxr3 << "\t" << dyr3 << "\t" << dzr3 << "\t";
+			fs2 << dxr4 << "\t" << dyr4 << "\t" << dzr4 << "\t";
 			/*fs2 << dxr5 << "\t" << dyr5 << "\t" << dzr5 << "\t";
 			*/
 			fs2 << contrx[0] << "\t" << contry[0] << "\t" << contrz[0] << "\t";
@@ -1137,8 +951,6 @@ Module0::DoYourDuty(int wc)
 			//fs2 << kpvxMod << "\t" << kpvyMod << "\t";
 
 			fs2 << ax << "\t" << ay << "\t" << az << "\t";
-			fs2 << x_error_pred << "\t" << y_error_pred << "\t" << z_error_pred << "\t";
-			fs2 << dx_error_pred << "\t" << dy_error_pred << "\t" << dz_error_pred << "\t";
 
 			fs2 << theta << "\t" << phi << "\t" << yawr << "\t";
 			fs2 << yawd << "\t" << eyaw << "\t";
@@ -1162,6 +974,7 @@ Module0::DoYourDuty(int wc)
 			fs2 << ke1 << "\t" << ke2 << "\t";
 			fs2 << gravity << "\t";
 			fs2 << thr_vel;
+			fs2 <<"\t" << position_accuracy << "\t" << height_accuracy << "\t" << GPS_num << "\t" << GPS_status << "\t";
 			fs2 << "\n";
 
 		}
@@ -1174,7 +987,7 @@ Module0::DoYourDuty(int wc)
 	if ((printTimeCounter == printstep)){
 		//printf ("GPS DATA: long %d lat %d height %d", longitude, latitude, height);
 		//printf ("gps_cartesian: long %f lat %f height %f \n", long_cart, lat_cart, height_cart);
-		//printf ("  fus long %d lat %d height %d \n", fus_longitude, fus_latitude, fus_height);
+		//printf ("fus long %d lat %d height %d \n", fusion_longitude, fusion_latitude, fusion_height);
 		//printf ("GPS STATUS:  gps: heading: %d, yaw: %f, accuracy: %d, height accuracy: %d, sat: %d, status: %d  \n", GPS_heading, psi, position_accuracy, height_accuracy, GPS_num, GPS_status);       
 		//printf("\n\nROBOT POSITION: x, y, z, yaw: %f %f %f %f\n", xr, yr, zr, yawr*180/M_PI);
 		//printf("COMMANDS: command pitch, roll, thrust, yaw: %d %d %d %d \n", CTRL_pitch, CTRL_roll, CTRL_thrust, CTRL_yaw);
