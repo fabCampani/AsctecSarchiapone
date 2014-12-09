@@ -342,19 +342,20 @@ double obstacleAdder(double x_coordinate, double y_coordinate, double livello)
 	list<Obstacle*>::iterator it;
 	list<Obstacle*>::iterator itback;
 	list<int>::iterator itsign;
+	list<int>::iterator itsignback;
 	double livello_ostacolo;
 
 	double livello_influenzato = livello;
 
-	for(it = Obstacles.begin(); it != Obstacles.end(); ++it)
+	for (it = Obstacles.begin(), itsign= sign.begin(); it != Obstacles.end(); ++it, ++itsign)
 	{
 		//calcolo curva di livello su ostacolo
 		livello_ostacolo = array_function[Nfunc1]((*it)->x, (*it)->y, (*it)->z);
 
-		for (itback = Obstacles.begin(), itsign = sign.begin(); it != itback; ++itback, ++itsign)
+		for (itback = Obstacles.begin(), itsignback = sign.begin(); it != itback; ++itback, ++itsignback)
 		{
 			//aggiungo le influenze delle gaussiane associate degli altri ostacoli
-			livello_ostacolo = livello_ostacolo + (*itsign) * gauss((*it)->x, (*it)->y, (*itback)->x, (*itback)->y);
+			livello_ostacolo = livello_ostacolo + (*itsignback) * gauss((*it)->x, (*it)->y, (*itback)->x, (*itback)->y);
 		}
 
 
