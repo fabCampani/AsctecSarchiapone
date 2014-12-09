@@ -318,7 +318,23 @@ double gauss(double x, double y, double center_x, double center_y)
 	return a*exp((-pow((x - center_x),2) - pow((y - center_y),2)) / pow(var,2));
 }
 
+//funzione ricorsiva
+double funzione(double x, double y, double z, list<Obstacle*> punti_prec){
+	
+	if (punti_prec.empty()){
+		return array_function[Nfunc1](x, y, z);
+	}
+	Obstacle* obs0 = punti_prec.front();
+	punti_prec.pop_front();
+	double precedente_xyz = funzione(x, y, z, punti_prec);
+	double precedente_xyz0 = funzione(obs0->x, obs0->y, obs0->z, punti_prec);
+	if (precedente_xyz > precedente_xyz0)
+		return precedente_xyz - gauss(x, y, obs0->x, obs0->y);
+	else
+		return precedente_xyz + gauss(x, y, obs0->x, obs0->y);
+}
 
+//funzione iterativa
 double obstacleAdder(double x_coordinate, double y_coordinate, double livello)
 {
 
