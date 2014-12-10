@@ -260,9 +260,9 @@ void PredizioneStato(double* vPos, double* vVel, int delay)
 	double k1 = 1;
 	double k2 = 1;
 	double k3 = 1;
-	double kd1 = 1;
-	double kd2 = 1;
-	double kd3 = 1;
+	double kd1 = 0;
+	double kd2 = 0;
+	double kd3 = 0;
 	vPos[0] = x_att + k1*cumulx_pred;
 	vVel[0] = vx_att + kd1*cumuldx_pred;
 	vPos[1] = y_att + k2*cumuly_pred;
