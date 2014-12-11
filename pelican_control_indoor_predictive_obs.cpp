@@ -231,13 +231,7 @@ void PredizioneStato(double* vPos, double* vVel, int delay)
 		dy_past_pred[i] = dy_past_pred[i - 1];
 		dz_past_pred[i] = dz_past_pred[i - 1];
 	}
-	
-	x_past_pred[0] = x_att;
-	y_past_pred[0] = y_att;
-	z_past_pred[0] = z_att;
-	dx_past_pred[0] = vx_att;
-	dy_past_pred[0] = vy_att;
-	dz_past_pred[0] = vz_att;
+
 
 	if (x_past_pred[RITARDO - 1] != 0){
 		//Calcolo errori di predizione
@@ -263,20 +257,28 @@ void PredizioneStato(double* vPos, double* vVel, int delay)
 	double kd1 = 0;
 	double kd2 = 0;
 	double kd3 = 0;
+
 	vPos[0] = x_att + k1*cumulx_pred;
 	vVel[0] = vx_att + kd1*cumuldx_pred;
 	vPos[1] = y_att + k2*cumuly_pred;
 	vVel[1] = vy_att + kd2*cumuldy_pred;
-	//vPos[2] = z_att + k3*cumulz_pred;
-	//vVel[2] = vz_att + kd3*cumuldz_pred;
+	vPos[2] = z_att + k3*cumulz_pred;
+	vVel[2] = vz_att + kd3*cumuldz_pred;
+
+	x_past_pred[0] = vPos[0];
+	y_past_pred[0] = vPos[1];
+	z_past_pred[0] = vPos[2];
+	dx_past_pred[0] = vVel[0];
+	dy_past_pred[0] = vVel[1];
+	dz_past_pred[0] = vVel[2];
 	
 	/*
 	vPos[0] = x_att;
 	vVel[0] = vx_att;
 	vPos[1] = y_att;
 	vVel[1] = vy_att;*/
-	vPos[2] = z_att;
-	vVel[2] = vz_att;
+	//vPos[2] = z_att;
+	//vVel[2] = vz_att;
 	
 }
 //Roba che inutile ma che c'è
@@ -916,7 +918,7 @@ Module0::DoYourDuty(int wc)
 		double funcRico = funzione(xr, yr, zr, Obstacles);
 		double funcIter = obstacleAdder(xr, yr, e1);
 
-		e1 = funcRico;
+		//e1 = funcRico;
 
 		//Soglia errore
 		if (e1 > thre1){
