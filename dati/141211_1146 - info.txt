@@ -1,0 +1,5 @@
+1146 prova 1
+1218 Prova con kposizione a 0.5 e ritardo 10 -> vediamo qualche oscillazione, dovuta a cosa??
+1454 ritardo modificato 12
+1459 ritardo 15
+prove successive: integrali sulla velocità

@@ -251,9 +251,9 @@ void PredizioneStato(double* vPos, double* vVel, int delay)
 		cumuldz_pred += dz_error_pred * t_medio;
 	}
 
-	double k1 = 1;
-	double k2 = 1;
-	double k3 = 1;
+	double k1 = 0.5;
+	double k2 = 0.5;
+	double k3 = 0.5;
 	double kd1 = 0;
 	double kd2 = 0;
 	double kd3 = 0;
@@ -790,24 +790,10 @@ Module0::DoYourDuty(int wc)
 			R[5] = sin(phi) * cos(theta);
 			R[8] = cos(phi) * cos(theta);
 
-			double pos[3] = { xr, yr, zr };
-			double vel[3] = { dxr, dyr, dzr };
-
-			PredizioneStato(pos, vel, RITARDO);
-
-			xrNow = xr;
-			yrNow = yr;
-			zrNow = zr;
-			dxrNow = dxr;
-			dyrNow = dyr;
-			dzrNow = dzr;
-
-			xr = pos[0];
-			yr = pos[1];
-			zr = pos[2];
-			dxr = vel[0];
-			dyr = vel[1];
-			dzr = vel[2];
+			//velocità non filtrata
+			dxrUn = dxr;
+			dyrUn = dyr;
+			dzrUn = dzr;
 
 			//Soglia velocità (filtro rumore)
 			//thr_vel = 0.08; //0.1 0.08 0.04
@@ -844,15 +830,24 @@ Module0::DoYourDuty(int wc)
 			dyrDeb = dyrT;
 			dzrDeb = dzrT;
 
-			//velocità non filtrata
-			dxrUn = dxr;
-			dyrUn = dyr;
-			dzrUn = dzr;
+			double pos[3] = { xr, yr, zr };
+			double vel[3] = { dxrT, dyrT, dzrT };
 
-			//Assegnamento velocità reale (ORA NED)
-			dxr = dxrT;
-			dyr = dyrT;
-			dzr = dzrT;
+			PredizioneStato(pos, vel, RITARDO);
+
+			xrNow = xr;
+			yrNow = yr;
+			zrNow = zr;
+			dxrNow = dxr;
+			dyrNow = dyr;
+			dzrNow = dzr;
+
+			xr = pos[0];
+			yr = pos[1];
+			zr = pos[2];
+			dxr = vel[0];
+			dyr = vel[1];
+			dzr = vel[2];
 			
 			//NED -> drone
 			double dxr1 = R[0] * dxr + R[1] * dyr + R[2] * dzr;

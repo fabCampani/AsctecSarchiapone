@@ -560,13 +560,13 @@ Module0::DoYourDuty(int wc)
 	*/
 	double dxrGPS = (double)fusion_speed_x / 1000;
 	double dyrGPS = (double)fusion_speed_y / 1000;
-
 	double dzrGPS = (double)fusion_speed_z / 1000;
 
 	/*
 	dxr = (double)GPS_speed_x / 1000;
 	dyr = (double)GPS_speed_y / 1000;
 	*/
+
 	//Se sono nuovi dati effettuo la previsione
 	if (true){		
 		//STIMATORE STATO successivo:
