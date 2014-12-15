@@ -142,6 +142,62 @@ double cumuldz_pred = 0;
 
 list<Obstacle*> Obstacles;
 
+//GRIGLIA OSTACOLI
+#define cells 100;
+//dimensione lato griglia
+double size_grid = 10;
+//position of cell [0][0]
+double start_cell_x = 0;
+double start_cell_y = 0;
+int occ_grid[cells][cells];
+void new_occ_grid(double xCenter, double yCenter){
+	for (int i = 0; i < cells; i++)
+	{
+		for (int j = 0; j < cells; j++)
+		{
+			occ_grid[i][j] = 0;
+		}
+	}
+	start_cell_x = xCenter - size_grid / 2;
+	start_cell_y = yCenter - size_grid / 2;
+}
+void new_occ(double xo, double yo){
+	if ((xo < start_cell_x) || (xo > start_cell_x + size_grid) || (yo < start_cell_y) || (yo> start_cell_y + size_grid))
+		return;
+	int index1 = (int)((xo - start_cell_x) / (size_grid / cells));
+	int index2 = (int)((yo - start_cell_y) / (size_grid / cells));
+	occ_grid[index1][index2] ++;
+	return;
+}
+void decade_occ(){
+	for (int i = 0; i < cells; i++)
+	{
+		for (int j = 0; j < cells; j++)
+		{
+			if (occ_grid[i][j] > 0)
+				occ_grid[i][j]--;
+		}
+	}
+}
+void enlist_occ(double zAtt){
+	Obstacles.clear()
+		for (int i = 0; i < cells; i++)
+		{
+			for (int j = 0; j < cells; j++)
+			{
+				if (occ_grid[i][j] > 0){
+					double xo = start_cell_x + (size_grid / cells) *i;
+					double yo = start_cell_y + (size_grid / cells) *j;
+					double zo = zAtt;
+					Obstacle *obs = new Obstacle(xo, yo, zo, grid[i][j], (size_grid / cells));
+					Obstacles.push_back(obs);
+				}
+			}
+		}
+}
+bool firsGriglia = true;
+
+
 //Funzione normallizzazione vettori
 void normalize1(double *vett){
 	double norm = sqrt(pow(vett[0], 2) + pow(vett[1], 2) + pow(vett[2], 2));
@@ -288,8 +344,13 @@ void initializeVett(double *vett, int lenght){
 		vett[i] = 0;
 	}
 }
-
+double time_grid = 2;
 void removeOld(double timeInterval){
+	time_grid -= timeInterval;
+	if (time_grid < 0){
+		decade_occ();
+		time_grid = 2;
+	}
 	list<Obstacle*>::iterator it;
 		for(it = Obstacles.begin(); it != Obstacles.end(); ){
 			(*it)->time -= timeInterval;
@@ -663,7 +724,8 @@ Module0::Init()
 	gps_flag = 0;
 	limit = 25;  // limits the streaming of ETHNOS messages 
 	count_ethnos = 0;
-	//Obstacles = new list< Obstacle >() ;
+
+	new_occ_grid(0, 0);
 }
 
 void
@@ -718,33 +780,28 @@ Module0::DoYourDuty(int wc)
 			//Per ora numero di punti fisso
 			int DIM_OBS = 10;
 			double thr_dim = 0.5;
-			/*
+
 			double xo = *((double*)rxMsg->ReadData());
 			double yo = *((double*)((char*)(rxMsg->ReadData()) + sizeof(double)));
 			double zo = *((double*)((char*)(rxMsg->ReadData()) + 2 * sizeof(double)));
-			*/
-			double xo = -2;
-			double yo = -1.20;
-			double zo = 0;
-			/*
+
 			xo = xrNow - xo;
 			yo = yrNow- yr;
 			zo = zrNow - zo;
-			*/
+			
+			void new_occ(double xo, double yo);
+
 			//cout << "prova" << endl;
 			//DIstance: sqrt(pow(xr - xr_back, 2) + pow(yr - yr_back, 2) + pow(zr - zr_back, 2)) < thr_dim
+			/*
 			list<Obstacle*>::iterator it;
 			for (it = Obstacles.begin(); it != Obstacles.end(); ++it){
-				if (sqrt(pow((*it)->x - xo, 2) + pow((*it)->y - yo, 2)) < thr_dim){/*
-					(*it)->x = (((*it)-> x) + 1 / 4 * xo) / 1.25;
-					(*it)->y = (((*it)-> y) + 1 / 4 * yo) / 1.25;
-					(*it)->z = (((*it)-> z) + 1 / 4 * zo) / 1.25;*/
+				if (sqrt(pow((*it)->x - xo, 2) + pow((*it)->y - yo, 2)) < thr_dim){
 					(*it)->time = 100;
 					flag = false;
 					break;
 				}
-			}
-			
+			}			
 			if (flag){
 				Obstacle *obs = new Obstacle(xo, yo, zo, 10, 0.25);
 				//cout << "prova push" << endl;
@@ -761,10 +818,12 @@ Module0::DoYourDuty(int wc)
 					Obstacles.pop_back();
 				}
 			}
+			*/
 
 		}
 		else if (rxMsg->ReadType() == 3)
 		{
+			
 			/*
 			ax = 0;
 			ay = 0;
@@ -778,6 +837,11 @@ Module0::DoYourDuty(int wc)
 			dyr = *((double*)((char*)(rxMsg->ReadData()) + 5 * sizeof(double)));
 			dzr = *((double*)((char*)(rxMsg->ReadData()) + 6 * sizeof(double)));
 			dyawr = *((double*)((char*)(rxMsg->ReadData()) + 7 * sizeof(double)));
+
+			if (firstGriglia){
+				new_occ_grid(xr, yr);
+				firstGriglia = true;
+			}
 
 			//Aggiornamento Rotation Matrix per angolo yaw (telecamere)
 			R[0] = cos(theta) * cos(yawr);
@@ -797,7 +861,6 @@ Module0::DoYourDuty(int wc)
 
 			//Soglia velocità (filtro rumore)
 			//thr_vel = 0.08; //0.1 0.08 0.04
-			int i = 0;
 
 			if ((dxrDeb - dxr) > thr_vel){
 				dxrT = dxrDeb - thr_vel;
@@ -902,6 +965,8 @@ Module0::DoYourDuty(int wc)
 	if ((initialize == 1)&(ended == 0)){
 
 		/***CONTROLLO INIZIA QUI****/
+		//Metto gli ostacoli nella lista
+		enlist_occ(double zr);
 
 		e1 = array_function[Nfunc1](xr, yr, zr);
 		e2 = array_function[Nfunc2](xr, yr, zr);
@@ -913,7 +978,7 @@ Module0::DoYourDuty(int wc)
 		double funcRico = funzione(xr, yr, zr, Obstacles);
 		double funcIter = obstacleAdder(xr, yr, e1);
 
-		//e1 = funcRico;
+		e1 = funcRico;
 
 		//Soglia errore
 		if (e1 > thre1){

@@ -5,6 +5,7 @@
 #include "module2.h"
 //#include "module3.h"
 #include "module4.h"
+#include "module5.h"
 
 
 main()
@@ -22,6 +23,7 @@ main()
 	long int period2 =10000;  //100 hz for accelerometers
     //long int period3 =33000;  //30 hz for camera
     long int period4 = 100000; //5hz for the waypoints manager
+	long int period5 = 100000; //5hz for obstacles
 	
 	int nTotEx 	= nSpoEx+nPerEx+1; 
 
@@ -31,7 +33,8 @@ main()
     Module1 *ModuleOne;
     Module2 *ModuleTwo;
     //Module3 *ModuleThree;
-    Module4 *ModuleFour;
+    //Module4 *ModuleFour;
+	Module5 *ModuleFive;
     
 	kernel = new ETDispatch (nTotEx,"127.0.0.1", 1800);
 
@@ -39,7 +42,8 @@ main()
 	ModuleOne = new Module1(kernel, period1, 1);  // user interface
 	ModuleTwo = new Module2(kernel, period2, 2); // imu
 	//ModuleThree = new Module3(kernel, period3, 3); // positions
-    ModuleFour = new Module4(kernel, period4,4); // waypoints
+    //ModuleFour = new Module4(kernel, period4,4); // waypoints
+	ModuleFive = new Module5(kernel, period5, 5); //obstacles
 
     printf ("\nExperts Built\n");
 	fflush(stdout);
@@ -49,8 +53,9 @@ main()
 	expertId[0] = kernel->AddExpert(ModuleOne);
 	expertId[1] = kernel->AddExpert(ModuleTwo);
 	//expertId[2] = kernel->AddExpert(ModuleThree);
-	expertId[2] = kernel->AddExpert(ModuleFour);
+	//expertId[2] = kernel->AddExpert(ModuleFour);
     expertId[3] = kernel->AddExpert(ModuleZero);
+	expertId[2] = kernel->AddExpert(ModuleFive);
 	
 	for (int i =0; i < nTotEx-1; i++)
         	kernel->ActivateExpert(expertId[i]);
@@ -70,7 +75,8 @@ main()
 	delete ModuleOne;
 	delete ModuleTwo;
 	//delete ModuleThree;
-    delete ModuleFour;
+    //delete ModuleFour;
+	delete ModuleFive;
 
 
 	delete kernel;

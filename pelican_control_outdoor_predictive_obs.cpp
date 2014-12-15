@@ -733,64 +733,66 @@ Module0::DoYourDuty(int wc)
 				lat_off = ((double)GPS_latitude*60.0*1852.0 / 10000000.0);
 				long_off = ((double)GPS_longitude*60.0*1852.0 / 10000000.0)*cos(((double)fusion_latitude*M_PI) / (10000000.0*180.0));
 				height_off = (double)fusion_height / 1000.0;
-				cout << fusion_longitude << "     " << long_off << endl;
-				cout << "*             height_off               *" << endl;
+				cout << GPS_longitude << "     " << long_off << endl;
+				cout << "*           offset_impostato               *" << endl;
 				cout << "********************************************" << endl;
 
 				flag_off = true;
 			}
 		}
-	}
-	else if (rxMsg->ReadType() == 5){
-		bool flag = true;
-		//drone wtr new obstacle
-		//Per ora numero di punti fisso
-		int DIM_OBS = 10;
-		double thr_dim = 0.5;
-		/*
-		double xo = *((double*)rxMsg->ReadData());
-		double yo = *((double*)((char*)(rxMsg->ReadData()) + sizeof(double)));
-		double zo = *((double*)((char*)(rxMsg->ReadData()) + 2 * sizeof(double)));
-		*/
-		double xo = -2;
-		double yo = -1.20;
-		double zo = 0;
-		/*
-		xo = xrNow - xo;
-		yo = yrNow- yr;
-		zo = zrNow - zo;
-		*/
-		//cout << "prova" << endl;
-		//DIstance: sqrt(pow(xr - xr_back, 2) + pow(yr - yr_back, 2) + pow(zr - zr_back, 2)) < thr_dim
-		list<Obstacle*>::iterator it;
-		for (it = Obstacles.begin(); it != Obstacles.end(); ++it){
-			if (sqrt(pow((*it)->x - xo, 2) + pow((*it)->y - yo, 2)) < thr_dim){/*
-																			   (*it)->x = (((*it)-> x) + 1 / 4 * xo) / 1.25;
-																			   (*it)->y = (((*it)-> y) + 1 / 4 * yo) / 1.25;
-																			   (*it)->z = (((*it)-> z) + 1 / 4 * zo) / 1.25;*/
-				(*it)->time = 100;
-				flag = false;
-				break;
+		else if (rxMsg->ReadType() == 5){
+			bool flag = true;
+			//drone wtr new obstacle
+			//Per ora numero di punti fisso
+			int DIM_OBS = 10;
+			double thr_dim = 0.5;
+			/*
+			double xo = *((double*)rxMsg->ReadData());
+			double yo = *((double*)((char*)(rxMsg->ReadData()) + sizeof(double)));
+			double zo = *((double*)((char*)(rxMsg->ReadData()) + 2 * sizeof(double)));
+			*/
+			double xo = -2;
+			double yo = -1.20;
+			double zo = 0;
+			/*
+			xo = xrNow - xo;
+			yo = yrNow- yr;
+			zo = zrNow - zo;
+			*/
+			//cout << "prova" << endl;
+			//DIstance: sqrt(pow(xr - xr_back, 2) + pow(yr - yr_back, 2) + pow(zr - zr_back, 2)) < thr_dim
+			list<Obstacle*>::iterator it;
+			for (it = Obstacles.begin(); it != Obstacles.end(); ++it){
+				if (sqrt(pow((*it)->x - xo, 2) + pow((*it)->y - yo, 2)) < thr_dim){/*
+																				   (*it)->x = (((*it)-> x) + 1 / 4 * xo) / 1.25;
+																				   (*it)->y = (((*it)-> y) + 1 / 4 * yo) / 1.25;
+																				   (*it)->z = (((*it)-> z) + 1 / 4 * zo) / 1.25;*/
+					(*it)->time = 100;
+					flag = false;
+					break;
+				}
 			}
-		}
 
-		if (flag){
-			Obstacle *obs = new Obstacle(xo, yo, zo, 10, 0.25);
-			//cout << "prova push" << endl;
-			//Obstacles.push_front(obs);
+			if (flag){				
+				Obstacle *obs = new Obstacle(xo, yo, zo, 10, 0.25);
+				/*
+				//cout << "prova push" << endl;
+				//Obstacles.push_front(obs);
 
-			cout << "Drone              Posizione: " << xrNow << " " << yrNow << " " << zrNow << "\n";
-			cout << "Ostacolo rilevato! Posizione: " << xo << " " << yo << " " << zo << "\n\n";
+				cout << "Drone              Posizione: " << xrNow << " " << yrNow << " " << zrNow << "\n";
+				cout << "Ostacolo rilevato! Posizione: " << xo << " " << yo << " " << zo << "\n\n";
 
-			//cout << "prova push ok" << endl;
-			if (ostacoli < DIM_OBS)
-				ostacoli++;
-			else{
-				//cout << "prova pop" << endl;
-				Obstacles.pop_back();
+				//cout << "prova push ok" << endl;
+				if (ostacoli < DIM_OBS)
+					ostacoli++;
+				else{
+					//cout << "prova pop" << endl;
+					Obstacles.pop_back();
+				}
+				*/
 			}
-		}
 
+		}
 	}
 	RemoveCurrentMsg();
 	//Dati da GPS
@@ -803,10 +805,15 @@ Module0::DoYourDuty(int wc)
 	yr = ((((double)GPS_longitude*60.0*1852.0 / 10000000.0)*(cos(((double)GPS_latitude*M_PI) / (10000000.0*180.0)))) - long_off);
 	zr = -(((double)fusion_height / 1000.0) - height_off);
 	*/
+
 	double dxrGPS = (double)fusion_speed_x / 1000;
 	double dyrGPS = (double)fusion_speed_y / 1000;
 	double dzrGPS = (double)fusion_speed_z / 1000;
 
+	if (dxrGPS == 0){
+		dxrGPS = (double)GPS_speed_x / 1000;
+		dyrGPS = (double)GPS_speed_y / 1000;
+	}
 	/*
 	dxr = (double)GPS_speed_x / 1000;
 	dyr = (double)GPS_speed_y / 1000;
@@ -846,18 +853,23 @@ Module0::DoYourDuty(int wc)
 		else
 			dzrT = dzrGPS;
 
+		//Valore precedente
+		dxrDeb = dxrT;
+		dyrDeb = dyrT;
+		dzrDeb = dzrT;
+
 		double pos[3] = { xrGPS, yrGPS, zrGPS };
 		double vel[3] = { dxrT, dyrT, dzrT };
 
 		PredizioneStato(pos, vel, RITARDO);
 
 		//non predetti
-		dxr3 = xrGPS;
-		dyr3 = yrGPS;
-		dzr3 = zrGPS;
-		dxr4 = dxrGPS;
-		dyr4 = dyrGPS;
-		dzr4 = dzrGPS;
+		xrNow = xrGPS;
+		yrNow = yrGPS;
+		zrNow = zrGPS;
+		dxrNow = dxrGPS;
+		dyrNow = dyrGPS;
+		dzrNow = dzrGPS;
 
 		//dati predetti
 		xr = pos[0];
@@ -880,22 +892,6 @@ Module0::DoYourDuty(int wc)
 		timeVec[0] = accum_time - last_time;
 		last_time = accum_time;
 	}
-
-
-	//Valore precedente
-	dxrDeb = dxrT;
-	dyrDeb = dyrT;
-	dzrDeb = dzrT;
-
-	//velocità non filtrata
-	dxrUn = dxr;
-	dyrUn = dyr;
-	dzrUn = dzr;
-
-	//Assegnamento velocità reale (ORA NED)
-	dxr = dxrT;
-	dyr = dyrT;
-	dzr = dzrT;
 
 	//NED -> drone
 	double dxr1 = R[0] * dxr + R[1] * dyr + R[2] * dzr;
@@ -939,6 +935,11 @@ Module0::DoYourDuty(int wc)
 
 		array_fgrad[Nfunc1](grad1, xr, yr, zr);
 		array_fgrad[Nfunc2](grad2, xr, yr, zr);
+
+		double funcRico = funzione(xr, yr, zr, Obstacles);
+		double funcIter = obstacleAdder(xr, yr, e1);
+
+		//e1 = funcRico;
 
 		//Soglia errore
 		if (e1 > thre1){
@@ -1182,8 +1183,8 @@ Module0::DoYourDuty(int wc)
 			fs2 << dxrT << "\t" << dyrT << "\t" << dzrT << "\t";
 			fs2 << dxrUn << "\t" << dyrUn << "\t" << dzrUn << "\t";
 			
-			fs2 << dxr3 << "\t" << dyr3 << "\t" << dzr3 << "\t";
-			fs2 << dxr4 << "\t" << dyr4 << "\t" << dzr4 << "\t";
+			fs2 << xrNow << "\t" << yrNow << "\t" << zrNow << "\t";
+			fs2 << dxrNow << "\t" << dyrNow << "\t" << dzrNow << "\t";
 			/*fs2 << dxr5 << "\t" << dyr5 << "\t" << dzr5 << "\t";
 			*/
 			fs2 << contrx[0] << "\t" << contry[0] << "\t" << contrz[0] << "\t";
