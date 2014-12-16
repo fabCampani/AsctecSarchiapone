@@ -29,6 +29,8 @@
 #include <stdio.h>
 #include <sys/time.h>
 
+#include <process.h>
+
 //aruco
 #include "aruco.h"
 #include "cvdrawingutils.h"
@@ -344,6 +346,7 @@ void initializeVett(double *vett, int lenght){
 		vett[i] = 0;
 	}
 }
+
 double time_grid = 2;
 void removeOld(double timeInterval){
 	time_grid -= timeInterval;
@@ -365,7 +368,8 @@ void removeOld(double timeInterval){
 
 void printList(){
 	ofstream fso("ostacoli.txt", std::ofstream::out | std::ofstream::app);
-
+	
+	system("clear");
 	if (fso.is_open()){
 		list<Obstacle*>::iterator it;
 		for (it = Obstacles.begin(); it != Obstacles.end(); ++it){
@@ -375,7 +379,7 @@ void printList(){
 		fso << "\n";
 		cout << Obstacles.size() << endl;
 	}
-
+	
 }
 
 double gauss(double x, double y, double center_x, double center_y)

@@ -5,6 +5,7 @@
 	Grid(double size){
 		size_grid = size;
 	}
+
 	void new_occ_grid(double xr, double yr){
 		for (int i = 0; i < cells; i++)
 		{

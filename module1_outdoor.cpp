@@ -439,6 +439,11 @@ void varListUpdateFinished() {
     aciAddContentToVarPacket(0,0x0106,&GPS_latitude);
     aciAddContentToVarPacket(0,0x0107,&GPS_longitude);
     aciAddContentToVarPacket(0,0x0108,&GPS_height);
+
+	aciAddContentToVarPacket(0, 0x010A, &GPS_speed_x);
+	aciAddContentToVarPacket(0, 0x0109, &GPS_speed_y);
+	aciAddContentToVarPacket(0, 0x0305, &fusion_speed_z);
+
     
 	//motor speed
     for(int i = 0; i < 6; i++){
@@ -457,7 +462,7 @@ void varListUpdateFinished() {
     //aciAddContentToVarPacket(0,0x0108,&height);
     aciAddContentToVarPacket(0,0x0303,&fusion_latitude);
     aciAddContentToVarPacket(0,0x0304,&fusion_longitude);
-    aciAddContentToVarPacket(0,0x0305,&fusion_height);
+    aciAddContentToVarPacket(0,0x0306,&fusion_height);
     aciAddContentToVarPacket(0,0x010B,&GPS_heading);
     aciAddContentToVarPacket(0,0x010C,&position_accuracy);
     aciAddContentToVarPacket(0,0x010D,&height_accuracy);

@@ -13,7 +13,7 @@
 #define ez_thr 2.5
 #define integrativeok 1.5
 
-#define RITARDO 30
+#define RITARDO 1
 
 //asctec
 #include "asctecCommIntf.h"
@@ -731,8 +731,8 @@ Module0::DoYourDuty(int wc)
 			if (recc == 94)
 			{
 				lat_off = ((double)GPS_latitude*60.0*1852.0 / 10000000.0);
-				long_off = ((double)GPS_longitude*60.0*1852.0 / 10000000.0)*cos(((double)fusion_latitude*M_PI) / (10000000.0*180.0));
-				height_off = (double)fusion_height / 1000.0;
+				long_off = ((double)GPS_longitude*60.0*1852.0 / 10000000.0)*cos(((double)GPS_latitude*M_PI) / (10000000.0*180.0));
+				height_off = (double)GPS_height / 1000.0;
 				cout << GPS_longitude << "     " << long_off << endl;
 				cout << "*           offset_impostato               *" << endl;
 				cout << "********************************************" << endl;
@@ -754,11 +754,13 @@ Module0::DoYourDuty(int wc)
 			double xo = -2;
 			double yo = -1.20;
 			double zo = 0;
+
 			/*
 			xo = xrNow - xo;
 			yo = yrNow- yr;
 			zo = zrNow - zo;
 			*/
+
 			//cout << "prova" << endl;
 			//DIstance: sqrt(pow(xr - xr_back, 2) + pow(yr - yr_back, 2) + pow(zr - zr_back, 2)) < thr_dim
 			list<Obstacle*>::iterator it;
@@ -797,23 +799,20 @@ Module0::DoYourDuty(int wc)
 	RemoveCurrentMsg();
 	//Dati da GPS
 
-	double xrGPS = (((double)fusion_latitude*60.0*1852.0 / 10000000.0) - lat_off);
-	double yrGPS = ((((double)fusion_longitude*60.0*1852.0 / 10000000.0)*(cos(((double)fusion_latitude*M_PI) / (10000000.0*180.0)))) - long_off);
-	double zrGPS = -(((double)fusion_height / 1000.0) - height_off);
+	double xrGPS = (((double)GPS_latitude*60.0*1852.0 / 10000000.0) - lat_off);
+	double yrGPS = ((((double)GPS_longitude*60.0*1852.0 / 10000000.0)*(cos(((double)GPS_latitude*M_PI) / (10000000.0*180.0)))) - long_off);
+	double zrGPS = -(((double)GPS_height / 1000.0) - height_off);
+	//cout << zrGPS << endl;
 	/*
 	xr = (((double)GPS_latitude*60.0*1852.0 / 10000000.0) - lat_off);
 	yr = ((((double)GPS_longitude*60.0*1852.0 / 10000000.0)*(cos(((double)GPS_latitude*M_PI) / (10000000.0*180.0)))) - long_off);
 	zr = -(((double)fusion_height / 1000.0) - height_off);
 	*/
 
-	double dxrGPS = (double)fusion_speed_x / 1000;
-	double dyrGPS = (double)fusion_speed_y / 1000;
-	double dzrGPS = (double)fusion_speed_z / 1000;
+	double dxrGPS = (double)GPS_speed_x / 1000;
+	double dyrGPS = (double)GPS_speed_y / 1000;
+	double dzrGPS = -(double)fusion_speed_z / 1000;
 
-	if (dxrGPS == 0){
-		dxrGPS = (double)GPS_speed_x / 1000;
-		dyrGPS = (double)GPS_speed_y / 1000;
-	}
 	/*
 	dxr = (double)GPS_speed_x / 1000;
 	dyr = (double)GPS_speed_y / 1000;
@@ -822,7 +821,7 @@ Module0::DoYourDuty(int wc)
 	//Se sono nuovi dati effettuo la previsione
 	if (true){		
 		//STIMATORE STATO successivo:
-
+		/*
 		//Soglia velocità (filtro rumore)
 		//thr_vel = 0.08; //0.1 0.08 0.04
 		int i = 0;
@@ -857,9 +856,9 @@ Module0::DoYourDuty(int wc)
 		dxrDeb = dxrT;
 		dyrDeb = dyrT;
 		dzrDeb = dzrT;
-
+		*/
 		double pos[3] = { xrGPS, yrGPS, zrGPS };
-		double vel[3] = { dxrT, dyrT, dzrT };
+		double vel[3] = { dxrGPS, dyrGPS, dzrGPS};
 
 		PredizioneStato(pos, vel, RITARDO);
 
@@ -1102,7 +1101,8 @@ Module0::DoYourDuty(int wc)
 		//Controllo Yaw (MAI TESTATO)
 		yawd = atan2(y_target - yr, x_target - xr);
 		eyaw = sin(yawd - yawr);
-		uy = kpyaw*(eyaw) + kdyaw*(-dyawr);
+
+		uy = /*kpyaw*(eyaw) + kdyaw*(-dyawr)*/0;
 
 		// thresholds to avoid too fast movements
 		int16_t CTRL_back;
@@ -1188,8 +1188,6 @@ Module0::DoYourDuty(int wc)
 			/*fs2 << dxr5 << "\t" << dyr5 << "\t" << dzr5 << "\t";
 			*/
 			fs2 << contrx[0] << "\t" << contry[0] << "\t" << contrz[0] << "\t";
-
-
 
 			fs2 << dxd << "\t" << dyd << "\t" << dzd << "\t";
 			//fs2 << dxrDeb << "\t" << dyrDeb << "\t" << dzrDeb << "\t";
