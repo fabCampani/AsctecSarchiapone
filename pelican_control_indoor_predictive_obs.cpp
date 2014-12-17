@@ -169,7 +169,7 @@ void new_occ(double xo, double yo){
 		cout << xo << "" << yo << " return\n";
 		return;
 	}
-	cout << xo << ":" << yo << "->";
+	
 	int index1 = (int)((xo - start_cell_x) / (size_grid / cells));
 	cout << index1 <<" ";
 	int index2 = (int)((yo - start_cell_y) / (size_grid / cells));
@@ -365,7 +365,7 @@ void initializeVett(double *vett, int lenght){
 		vett[i] = 0;
 	}
 }
-#define TIME_GRID 1
+#define TIME_GRID 0.8
 double time_grid = TIME_GRID;
 void removeOld(double timeInterval){
 	time_grid -= timeInterval;
@@ -401,7 +401,7 @@ void printList(){
 double gauss(double x, double y, double center_x, double center_y)
 {
 	double a = 0.8;
-	double var = 1;
+	double var = 0.8;
 
 	return a*exp((-pow((x - center_x),2) - pow((y - center_y),2)) / pow(var,2));
 }
@@ -795,53 +795,6 @@ Module0::DoYourDuty(int wc)
 			cout << "*             press A to land              *" << endl;
 			cout << "********************************************" << endl;
 		}
-		else if (rxMsg->ReadType() == 5){
-			bool flag = true;
-			//drone wtr new obstacle
-			//Per ora numero di punti fisso
-			int DIM_OBS = 10;
-			double thr_dim = 0.5;
-
-			double xo = *((double*)rxMsg->ReadData());
-			double yo = *((double*)((char*)(rxMsg->ReadData()) + sizeof(double)));
-			double zo = *((double*)((char*)(rxMsg->ReadData()) + 2 * sizeof(double)));
-
-			xo = xrNow - xo;
-			yo = yrNow- yr;
-			zo = zrNow - zo;
-			
-			new_occ(xo, yo);
-
-			//cout << "prova" << endl;
-			//DIstance: sqrt(pow(xr - xr_back, 2) + pow(yr - yr_back, 2) + pow(zr - zr_back, 2)) < thr_dim
-			/*
-			list<Obstacle*>::iterator it;
-			for (it = Obstacles.begin(); it != Obstacles.end(); ++it){
-				if (sqrt(pow((*it)->x - xo, 2) + pow((*it)->y - yo, 2)) < thr_dim){
-					(*it)->time = 100;
-					flag = false;
-					break;
-				}
-			}			
-			if (flag){
-				Obstacle *obs = new Obstacle(xo, yo, zo, 10, 0.25);
-				//cout << "prova push" << endl;
-				//Obstacles.push_front(obs);
-				
-				cout << "Drone              Posizione: " << xrNow << " " << yrNow << " " << zrNow << "\n";
-				cout << "Ostacolo rilevato! Posizione: " << xo << " " << yo << " " << zo << "\n\n";
-				
-				//cout << "prova push ok" << endl;
-				if (ostacoli < DIM_OBS)
-					ostacoli++;
-				else{
-					//cout << "prova pop" << endl;
-					Obstacles.pop_back();
-				}
-			}
-			*/
-
-		}
 		else if (rxMsg->ReadType() == 3)
 		{
 			
@@ -953,6 +906,63 @@ Module0::DoYourDuty(int wc)
 			}
 			timeVec[0] = accum_time - last_time;
 			last_time = accum_time;
+		}
+		else if (rxMsg->ReadType() == 5){
+			bool flag = true;
+			//Per ora numero di punti fisso
+			int DIM_OBS = 10;
+			double thr_dim = 0.5;
+
+			double xo = *((double*)rxMsg->ReadData());
+			double yo = *((double*)((char*)(rxMsg->ReadData()) + sizeof(double)));
+			double zo = *((double*)((char*)(rxMsg->ReadData()) + 2 * sizeof(double)));
+			/*
+			double x1 = R[0] * xo + R[3] * yo + R[6] * zo;
+			double y1 = R[1] * xo + R[4] * yo + R[7] * zo;
+			double z1 = R[2] * xo + R[5] * yo + R[8] * zo;
+
+			xo = x1;
+			yo = y1;
+			zo = z1;
+			*/
+			cout << xo << ":" << yo << " ** xr, yr -> " << xrNow << ":" << yrNow <<endl;
+
+			xo = xrNow - xo;
+			yo = yrNow - yo;
+			zo = zrNow - zo;
+
+			cout << xo << ":" << yo << ": ";
+			new_occ(xo, yo);
+
+			//cout << "prova" << endl;
+			//DIstance: sqrt(pow(xr - xr_back, 2) + pow(yr - yr_back, 2) + pow(zr - zr_back, 2)) < thr_dim
+			/*
+			list<Obstacle*>::iterator it;
+			for (it = Obstacles.begin(); it != Obstacles.end(); ++it){
+			if (sqrt(pow((*it)->x - xo, 2) + pow((*it)->y - yo, 2)) < thr_dim){
+			(*it)->time = 100;
+			flag = false;
+			break;
+			}
+			}
+			if (flag){
+			Obstacle *obs = new Obstacle(xo, yo, zo, 10, 0.25);
+			//cout << "prova push" << endl;
+			//Obstacles.push_front(obs);
+
+			cout << "Drone              Posizione: " << xrNow << " " << yrNow << " " << zrNow << "\n";
+			cout << "Ostacolo rilevato! Posizione: " << xo << " " << yo << " " << zo << "\n\n";
+
+			//cout << "prova push ok" << endl;
+			if (ostacoli < DIM_OBS)
+			ostacoli++;
+			else{
+			//cout << "prova pop" << endl;
+			Obstacles.pop_back();
+			}
+			}
+			*/
+
 		}
 	}
 	RemoveCurrentMsg();
@@ -1298,6 +1308,7 @@ Module0::DoYourDuty(int wc)
 	// terminal visualization (debug)
 
 	if ((printTimeCounter == printstep)){
+		system("clear");
 		//printf ("GPS DATA: long %d lat %d height %d", longitude, latitude, height);
 		//printf ("gps_cartesian: long %f lat %f height %f \n", long_cart, lat_cart, height_cart);
 		//printf ("  fus long %d lat %d height %d \n", fus_longitude, fus_latitude, fus_height);

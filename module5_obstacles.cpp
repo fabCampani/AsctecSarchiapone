@@ -167,11 +167,12 @@ Module5::DoYourDuty(int wc)
 				Rcv2 = Rcv2.t();  // rotation of inverse
 				TheMarkers2[m].Tvec = -Rcv2 * TheMarkers2[m].Tvec; // translation of inverse
 				
-				///marker position with respect to the camera ( - per invertire gli assi)
+				///marker position with respect to the camera ( - per invertire gli assi?)
 				
 				xc = -TheMarkers2[m].Tvec.at<float>(1, 0); //aruco y
 				yc = -TheMarkers2[m].Tvec.at<float>(0, 0); //aruco x
 				zc = -TheMarkers2[m].Tvec.at<float>(2, 0); //aruco z
+				
 				aPhi = asin(-Rcv2.at<float>(2, 0)); //roll calculated with aruco
 				double cosphi = cos(aPhi);
 				//aTheta =- ((acos(Rcv2.at<float>(2,2)/cosphi)) - M_PI/2.0); //pitch calculated with aruco
@@ -179,6 +180,7 @@ Module5::DoYourDuty(int wc)
 				//rotation matrix R linerized:
 				// 11 12 13 21 22 23 31 32 33
 				//using theta and phi from asctec and psi from aruco
+				
 				static double *R = new double[9];
 				//first row
 				R[0] = cos(theta) * cos(aPsi);
@@ -198,12 +200,13 @@ Module5::DoYourDuty(int wc)
 				xom = R[0] * xoc + R[1] * yoc + R[2] * zoc;
 				yom = R[3] * xoc + R[4] * yoc + R[5] * zoc;
 				zom = R[6] * xoc + R[7] * yoc + R[8] * zoc;
-
-				//drone position wrt obstacle position
-				xr = xom + xc;
-				yr = yom + yc;
-				zr = zom + zc;
-				//cout << "Le telecamere hanno trovato il marker: x, y, z:" << xr << " " << yr << " " << zr << endl;
+				
+				
+				xr = xoc + xc;
+				yr = yoc + yc;
+				zr = zoc + zc;
+				//cout << xr << ":" << yr << "-> ";
+				//cout << "marker: x, y, z:" << xr << " " << yr << " " << zr << endl;
 			}
 
 		}
