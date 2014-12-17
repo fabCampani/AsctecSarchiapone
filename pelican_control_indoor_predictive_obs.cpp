@@ -193,7 +193,7 @@ void enlist_occ(double zAtt){
 		{
 			for (int j = 0; j < cells; j++)
 			{
-				if (occ_grid[i][j] > 0){
+				if (occ_grid[i][j] > 10){
 					double xo = start_cell_x + (size_grid / cells) *i;
 					double yo = start_cell_y + (size_grid / cells) *j;
 					double zo = zAtt;
@@ -365,7 +365,7 @@ void initializeVett(double *vett, int lenght){
 		vett[i] = 0;
 	}
 }
-#define TIME_GRID 0.8
+#define TIME_GRID 1
 double time_grid = TIME_GRID;
 void removeOld(double timeInterval){
 	time_grid -= timeInterval;
@@ -400,8 +400,8 @@ void printList(){
 
 double gauss(double x, double y, double center_x, double center_y)
 {
-	double a = 0.8;
-	double var = 0.8;
+	double a = 1;
+	double var = 1;
 
 	return a*exp((-pow((x - center_x),2) - pow((y - center_y),2)) / pow(var,2));
 }
@@ -797,7 +797,10 @@ Module0::DoYourDuty(int wc)
 		}
 		else if (rxMsg->ReadType() == 3)
 		{
-			
+			if (firstGriglia){
+				firstGriglia = false;
+				new_occ_grid(-3, 0);
+			}
 			/*
 			ax = 0;
 			ay = 0;
@@ -811,12 +814,6 @@ Module0::DoYourDuty(int wc)
 			dyr = *((double*)((char*)(rxMsg->ReadData()) + 5 * sizeof(double)));
 			dzr = *((double*)((char*)(rxMsg->ReadData()) + 6 * sizeof(double)));
 			dyawr = *((double*)((char*)(rxMsg->ReadData()) + 7 * sizeof(double)));
-
-			if (firstGriglia){
-				new_occ_grid(-2, 0);
-				firstGriglia = false;
-			}
-
 			//Aggiornamento Rotation Matrix per angolo yaw (telecamere)
 			R[0] = cos(theta) * cos(yawr);
 			R[3] = -cos(phi) * sin(yawr) + sin(phi) * sin(theta) * cos(yawr);
@@ -827,15 +824,27 @@ Module0::DoYourDuty(int wc)
 			R[2] = -sin(theta);
 			R[5] = sin(phi) * cos(theta);
 			R[8] = cos(phi) * cos(theta);
+			double pos[3] = { xr, yr, zr };
+			double vel[3] = { dxr, dyr, dzr };
+			PredizioneStato(pos, vel, RITARDO);
+			
+			xrNow = xr;
+			yrNow = yr;
+			zrNow = zr;
+			dxrNow = dxr;
+			dyrNow = dyr;
+			dzrNow = dzr;
 
-			//velocità non filtrata
-			dxrUn = dxr;
-			dyrUn = dyr;
-			dzrUn = dzr;
+			xr = pos[0];
+			yr = pos[1];
+			zr = pos[2];
+			dxr = vel[0];
+			dyr = vel[1];
+			dzr = vel[2];
 
 			//Soglia velocità (filtro rumore)
 			//thr_vel = 0.08; //0.1 0.08 0.04
-
+			int i = 0;
 			if ((dxrDeb - dxr) > thr_vel){
 				dxrT = dxrDeb - thr_vel;
 			}
@@ -867,42 +876,31 @@ Module0::DoYourDuty(int wc)
 			dyrDeb = dyrT;
 			dzrDeb = dzrT;
 
-			double pos[3] = { xr, yr, zr };
-			double vel[3] = { dxrT, dyrT, dzrT };
+			//velocità non filtrata
+			dxrUn = dxr;
+			dyrUn = dyr;
+			dzrUn = dzr;
 
-			PredizioneStato(pos, vel, RITARDO);
+			//Assegnamento velocità reale (ORA NED)
+			dxr = dxrT;
+			dyr = dyrT;
+			dzr = dzrT;
 
-			xrNow = xr;
-			yrNow = yr;
-			zrNow = zr;
-			dxrNow = dxr;
-			dyrNow = dyr;
-			dzrNow = dzr;
-
-			xr = pos[0];
-			yr = pos[1];
-			zr = pos[2];
-			dxr = vel[0];
-			dyr = vel[1];
-			dzr = vel[2];
-			
 			//NED -> drone
 			double dxr1 = R[0] * dxr + R[1] * dyr + R[2] * dzr;
 			double dyr1 = R[3] * dxr + R[4] * dyr + R[5] * dzr;
 			double dzr1 = R[6] * dxr + R[7] * dyr + R[8] * dzr;
-
 			dxr = dxr1;
 			dyr = dyr1;
 			dzr = dzr1;
 
 			telecamere = true;
-			for (int i = RITARDO-1; i >0; i--)
+			for (int i = RITARDO - 1; i >0; i--)
 			{
 				contrx[i] = contrx[i - 1];
 				contry[i] = contry[i - 1];
 				contrz[i] = contrz[i - 1];
 				timeVec[i] = timeVec[i - 1];
-				
 			}
 			timeVec[0] = accum_time - last_time;
 			last_time = accum_time;
@@ -1313,8 +1311,8 @@ Module0::DoYourDuty(int wc)
 		//printf ("gps_cartesian: long %f lat %f height %f \n", long_cart, lat_cart, height_cart);
 		//printf ("  fus long %d lat %d height %d \n", fus_longitude, fus_latitude, fus_height);
 		//printf ("GPS STATUS:  gps: heading: %d, yaw: %f, accuracy: %d, height accuracy: %d, sat: %d, status: %d  \n", GPS_heading, psi, position_accuracy, height_accuracy, GPS_num, GPS_status);       
-		//printf("\n\nROBOT POSITION: x, y, z, yaw: %f %f %f %f\n", xr, yr, zr, yawr*180/M_PI);
-		//printf("COMMANDS: command pitch, roll, thrust, yaw: %d %d %d %d \n", CTRL_pitch, CTRL_roll, CTRL_thrust, CTRL_yaw);
+		printf("\n\nROBOT POSITION: x, y, z, yaw: %f %f %f %f\n", xr, yr, zr, yawr*180/M_PI);
+		printf("COMMANDS: command pitch, roll, thrust, yaw: %d %d %d %d \n", CTRL_pitch, CTRL_roll, CTRL_thrust, CTRL_yaw);
 		//printf("COMMANDS: edx, edy, edz: %f %f %f \n", edx, edy, edz);
 		//printf("VELOCITY   : dx, dy, dz: %f %f %f \n", dxr, dyr, dzr);
 		//printf("VELOCITYNED: dx, dy, dz: %f %f %f \n", dxrDeb, dyrDeb, dzrDeb);
