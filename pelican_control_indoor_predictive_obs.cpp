@@ -29,7 +29,7 @@
 #include <stdio.h>
 #include <sys/time.h>
 
-#include <process.h>
+#include <stdlib.h>
 
 //aruco
 #include "aruco.h"
@@ -145,13 +145,14 @@ double cumuldz_pred = 0;
 list<Obstacle*> Obstacles;
 
 //GRIGLIA OSTACOLI
-#define cells 100;
+#define cells 20
 //dimensione lato griglia
 double size_grid = 10;
 //position of cell [0][0]
 double start_cell_x = 0;
 double start_cell_y = 0;
 int occ_grid[cells][cells];
+
 void new_occ_grid(double xCenter, double yCenter){
 	for (int i = 0; i < cells; i++)
 	{
@@ -164,11 +165,16 @@ void new_occ_grid(double xCenter, double yCenter){
 	start_cell_y = yCenter - size_grid / 2;
 }
 void new_occ(double xo, double yo){
-	if ((xo < start_cell_x) || (xo > start_cell_x + size_grid) || (yo < start_cell_y) || (yo> start_cell_y + size_grid))
+	if ((xo < start_cell_x) || (xo > start_cell_x + size_grid) || (yo < start_cell_y) || (yo> start_cell_y + size_grid)){
+		cout << xo << "" << yo << " return\n";
 		return;
+	}
+	cout << xo << ":" << yo << "->";
 	int index1 = (int)((xo - start_cell_x) / (size_grid / cells));
+	cout << index1 <<" ";
 	int index2 = (int)((yo - start_cell_y) / (size_grid / cells));
-	occ_grid[index1][index2] ++;
+	cout << index2 << endl;
+	occ_grid[index1][index2]++;
 	return;
 }
 void decade_occ(){
@@ -182,7 +188,7 @@ void decade_occ(){
 	}
 }
 void enlist_occ(double zAtt){
-	Obstacles.clear()
+	Obstacles.clear();
 		for (int i = 0; i < cells; i++)
 		{
 			for (int j = 0; j < cells; j++)
@@ -191,14 +197,27 @@ void enlist_occ(double zAtt){
 					double xo = start_cell_x + (size_grid / cells) *i;
 					double yo = start_cell_y + (size_grid / cells) *j;
 					double zo = zAtt;
-					Obstacle *obs = new Obstacle(xo, yo, zo, grid[i][j], (size_grid / cells));
+					Obstacle *obs = new Obstacle(xo, yo, zo, occ_grid[i][j], (size_grid / cells));
 					Obstacles.push_back(obs);
 				}
 			}
 		}
 }
-bool firsGriglia = true;
+bool firstGriglia = true;
 
+void print_occ_Grid(){
+	system("clear");
+	cout << start_cell_x << " " << start_cell_y<<endl;
+	for (int i = 0; i < cells; i++)
+	{
+		for (int j = 0; j < cells; j++)
+		{
+			cout << occ_grid[i][j] << "\t";
+		}
+		cout << endl;
+	}
+	cout << endl << endl;
+}
 
 //Funzione normallizzazione vettori
 void normalize1(double *vett){
@@ -346,13 +365,13 @@ void initializeVett(double *vett, int lenght){
 		vett[i] = 0;
 	}
 }
-
-double time_grid = 2;
+#define TIME_GRID 1
+double time_grid = TIME_GRID;
 void removeOld(double timeInterval){
 	time_grid -= timeInterval;
 	if (time_grid < 0){
 		decade_occ();
-		time_grid = 2;
+		time_grid = TIME_GRID;
 	}
 	list<Obstacle*>::iterator it;
 		for(it = Obstacles.begin(); it != Obstacles.end(); ){
@@ -366,19 +385,16 @@ void removeOld(double timeInterval){
 	}
 }
 
+
 void printList(){
-	ofstream fso("ostacoli.txt", std::ofstream::out | std::ofstream::app);
-	
-	system("clear");
-	if (fso.is_open()){
-		list<Obstacle*>::iterator it;
-		for (it = Obstacles.begin(); it != Obstacles.end(); ++it){
-			cout << (*it)->time << " ";
-			fso << (*it)->time << "\t" << (*it)->x << "\t" << (*it)->y << "\t" << (*it)->z << "\t";
-		}
-		fso << "\n";
-		cout << Obstacles.size() << endl;
+
+	list<Obstacle*>::iterator it;
+	for (it = Obstacles.begin(); it != Obstacles.end(); ++it){
+		cout << "(" << (*it)->x << ":" << (*it)->y <<")\t";
 	}
+	cout << "\n";
+	cout << Obstacles.size() << endl;
+	
 	
 }
 
@@ -460,6 +476,7 @@ Module0::printParams() {
 //Caricamento parametri (da file params2.txt se esiste)
 void
 Module0::loadParams() {
+	/*
 	double xo = -2;
 	double yo = -1;
 	double zo = 0;
@@ -793,7 +810,7 @@ Module0::DoYourDuty(int wc)
 			yo = yrNow- yr;
 			zo = zrNow - zo;
 			
-			void new_occ(double xo, double yo);
+			new_occ(xo, yo);
 
 			//cout << "prova" << endl;
 			//DIstance: sqrt(pow(xr - xr_back, 2) + pow(yr - yr_back, 2) + pow(zr - zr_back, 2)) < thr_dim
@@ -843,8 +860,8 @@ Module0::DoYourDuty(int wc)
 			dyawr = *((double*)((char*)(rxMsg->ReadData()) + 7 * sizeof(double)));
 
 			if (firstGriglia){
-				new_occ_grid(xr, yr);
-				firstGriglia = true;
+				new_occ_grid(-2, 0);
+				firstGriglia = false;
 			}
 
 			//Aggiornamento Rotation Matrix per angolo yaw (telecamere)
@@ -970,7 +987,7 @@ Module0::DoYourDuty(int wc)
 
 		/***CONTROLLO INIZIA QUI****/
 		//Metto gli ostacoli nella lista
-		enlist_occ(double zr);
+		enlist_occ(zr);
 
 		e1 = array_function[Nfunc1](xr, yr, zr);
 		e2 = array_function[Nfunc2](xr, yr, zr);
@@ -1295,6 +1312,8 @@ Module0::DoYourDuty(int wc)
 		//printf("DESIDERED VELOCITY: dx, dy, dz: %f %f %f \n", dxd, dyd, dzd);
 		//printf("ERRORS: e1, e2 %f %f\n", e1, e2);
 		//printf("YAW CTRL: yawd, yawr %f %f\n", yawd, yawr);
+		print_occ_Grid();
+		printList();
 		printTimeCounter = 0;
 	}
 
