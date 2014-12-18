@@ -13,7 +13,7 @@
 #define ez_thr 2.5
 #define integrativeok 1.5
 
-#define RITARDO 10
+
 #define DEFAULTTIME 10
 #define DEFAULTSIZE 0.20
 
@@ -109,50 +109,58 @@ double Perpx, Perpy, Perpz;
 double kpvxMod, kpvyMod;
 
 
-//ROBA
+//PREDIZIONE
+//-----------------------------------------------------------------PARAMETRI E VARIABILI PREDITTORE DI SMITH
+#define RITARDO 10
 double last_time = 0;
 double timeVec[RITARDO];
-double contrx[RITARDO];
+double contrx[RITARDO]; //Controlli passati
 double contry[RITARDO];
 double contrz[RITARDO];
 bool telecamere;
-//Roba Errore Predizione
-double x_past_pred[RITARDO];
+//Errore Predizione
+double x_past_pred[RITARDO];  //predizioni passate posizione 
 double y_past_pred[RITARDO];
 double z_past_pred[RITARDO];
 
-double dx_past_pred[RITARDO];
+double dx_past_pred[RITARDO];//predizioni passate velocità
 double dy_past_pred[RITARDO];
 double dz_past_pred[RITARDO];
 
-double x_error_pred;
+double x_error_pred; //errori predizione posizione
 double y_error_pred;
 double z_error_pred;
-double dx_error_pred;
+double dx_error_pred; //errori predizione velocità
 double dy_error_pred;
 double dz_error_pred;
 
-double cumulx_pred = 0;
+double cumulx_pred = 0; //integrale errore predizione posizione
 double cumuly_pred = 0;
 double cumulz_pred = 0;
 
-double cumuldx_pred = 0;
+double cumuldx_pred = 0; //integrale errore predizione velocità
 double cumuldy_pred = 0;
 double cumuldz_pred = 0;
 
-//ostacoli
-
-list<Obstacle*> Obstacles;
-
 //GRIGLIA OSTACOLI
-#define cells 20
+//---------------------------------------------------------------------PARAMETRI E VARIABILI OSTACOLI
+#define thr_obstacle 10		//soglia per cui l'ostacolo viente considerato tale
+#define cells 40	//---> celle da 0.25
+#define TIME_GRID 1
 //dimensione lato griglia
 double size_grid = 10;
 //position of cell [0][0]
 double start_cell_x = 0;
 double start_cell_y = 0;
 int occ_grid[cells][cells];
+// lista ostacoli
+list<Obstacle*> Obstacles;
+bool firstGriglia = true;
+double time_grid = TIME_GRID;
+//---------------------------------------------------------------------
 
+
+//Crea un nuova griglia centrata in xCenter, yCenter
 void new_occ_grid(double xCenter, double yCenter){
 	for (int i = 0; i < cells; i++)
 	{
@@ -164,6 +172,8 @@ void new_occ_grid(double xCenter, double yCenter){
 	start_cell_x = xCenter - size_grid / 2;
 	start_cell_y = yCenter - size_grid / 2;
 }
+
+//aggiunge un ostacolo alla griglia nella casella corrispondente alle coordinate xo yo
 void new_occ(double xo, double yo){
 	if ((xo < start_cell_x) || (xo > start_cell_x + size_grid) || (yo < start_cell_y) || (yo> start_cell_y + size_grid)){
 		cout << xo << "" << yo << " return\n";
@@ -177,6 +187,7 @@ void new_occ(double xo, double yo){
 	occ_grid[index1][index2]++;
 	return;
 }
+//decrementa il valore degli ostacoli di tutte le caselle nella griglia diverse da zero
 void decade_occ(){
 	for (int i = 0; i < cells; i++)
 	{
@@ -187,13 +198,14 @@ void decade_occ(){
 		}
 	}
 }
+//Estrae la lista degli ostacoli dalla matrice degli ostacoli
 void enlist_occ(double zAtt){
 	Obstacles.clear();
 		for (int i = 0; i < cells; i++)
 		{
 			for (int j = 0; j < cells; j++)
 			{
-				if (occ_grid[i][j] > 10){
+				if (occ_grid[i][j] > thr_obstacle){
 					double xo = start_cell_x + (size_grid / cells) *i;
 					double yo = start_cell_y + (size_grid / cells) *j;
 					double zo = zAtt;
@@ -203,8 +215,7 @@ void enlist_occ(double zAtt){
 			}
 		}
 }
-bool firstGriglia = true;
-
+//stampa della griglia degli ostacoli
 void print_occ_Grid(){
 	system("clear");
 	cout << start_cell_x << " " << start_cell_y<<endl;
@@ -218,6 +229,39 @@ void print_occ_Grid(){
 	}
 	cout << endl << endl;
 }
+
+void removeOld(double timeInterval){
+	time_grid -= timeInterval;
+	if (time_grid < 0){
+		decade_occ();
+		time_grid = TIME_GRID;
+	}
+	list<Obstacle*>::iterator it;
+	for (it = Obstacles.begin(); it != Obstacles.end();){
+		(*it)->time -= timeInterval;
+		if ((*it)->time < 0){
+			it = Obstacles.erase(it);
+			ostacoli--;
+		}
+		else
+			it++;
+	}
+}
+
+//stampa la lista degli ostacoli
+void printList(){
+
+	list<Obstacle*>::iterator it;
+	for (it = Obstacles.begin(); it != Obstacles.end(); ++it){
+		cout << "(" << (*it)->x << ":" << (*it)->y << ")\t";
+	}
+	cout << "\n";
+	cout << Obstacles.size() << endl;
+
+
+}
+
+
 
 //Funzione normallizzazione vettori
 void normalize1(double *vett){
@@ -365,38 +409,9 @@ void initializeVett(double *vett, int lenght){
 		vett[i] = 0;
 	}
 }
-#define TIME_GRID 1
-double time_grid = TIME_GRID;
-void removeOld(double timeInterval){
-	time_grid -= timeInterval;
-	if (time_grid < 0){
-		decade_occ();
-		time_grid = TIME_GRID;
-	}
-	list<Obstacle*>::iterator it;
-		for(it = Obstacles.begin(); it != Obstacles.end(); ){
-			(*it)->time -= timeInterval;
-			if ((*it)->time < 0){
-				it = Obstacles.erase(it);
-				ostacoli--;
-			}
-			else
-				it++;
-	}
-}
 
 
-void printList(){
 
-	list<Obstacle*>::iterator it;
-	for (it = Obstacles.begin(); it != Obstacles.end(); ++it){
-		cout << "(" << (*it)->x << ":" << (*it)->y <<")\t";
-	}
-	cout << "\n";
-	cout << Obstacles.size() << endl;
-	
-	
-}
 
 double gauss(double x, double y, double center_x, double center_y)
 {
@@ -1321,7 +1336,7 @@ Module0::DoYourDuty(int wc)
 		//printf("DESIDERED VELOCITY: dx, dy, dz: %f %f %f \n", dxd, dyd, dzd);
 		//printf("ERRORS: e1, e2 %f %f\n", e1, e2);
 		//printf("YAW CTRL: yawd, yawr %f %f\n", yawd, yawr);
-		print_occ_Grid();
+		//print_occ_Grid();
 		printList();
 		printTimeCounter = 0;
 	}
