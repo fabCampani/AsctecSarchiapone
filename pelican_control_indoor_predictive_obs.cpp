@@ -314,7 +314,7 @@ void PredizioneStato(double* vPos, double* vVel, int delay)
 	
 	double ax = contrx[delay - 1];
 	double ay = contry[delay - 1];
-	double az = contry[delay - 1];
+	double az = contrz[delay - 1];
 	for (int j = 0; j < delay; j++)
 	{
 
@@ -341,7 +341,7 @@ void PredizioneStato(double* vPos, double* vVel, int delay)
 		az = contrz[delay - j - 1];
 	}
 
-	//----Errore di preda
+	//----Errore di predizione
 	//Shift vettori
 	for (int i = RITARDO - 1; i >0; i--)
 	{
@@ -412,11 +412,11 @@ void initializeVett(double *vett, int lenght){
 
 
 
-double var = 0.76;
+double var = 0.42;
 
 double gauss(double x, double y, double center_x, double center_y)
 {
-	double a = 1;
+	double a = 3.5;
 	return a*exp((-pow((x - center_x),2) - pow((y - center_y),2)) / pow(var,2));
 }
 

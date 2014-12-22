@@ -215,7 +215,7 @@ void PredizioneStato(double* vPos, double* vVel, int delay)
 
 	double ax = contrx[delay - 1];
 	double ay = contry[delay - 1];
-	double az = contry[delay - 1];
+	double az = contrz[delay - 1];
 	for (int j = 0; j < delay; j++)
 	{
 
@@ -891,6 +891,7 @@ Module0::DoYourDuty(int wc)
 		timeVec[0] = accum_time - last_time;
 		last_time = accum_time;
 	}
+
 	//NED -> drone
 	double dxr1 = R[0] * dxr + R[1] * dyr + R[2] * dzr;
 	double dyr1 = R[3] * dxr + R[4] * dyr + R[5] * dzr;
