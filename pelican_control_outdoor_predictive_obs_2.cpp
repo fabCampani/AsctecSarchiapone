@@ -13,7 +13,7 @@
 #define ez_thr 2.5
 #define integrativeok 1.5
 
-#define RITARDO 3
+#define RITARDO 5
 
 //asctec
 #include "asctecCommIntf.h"
@@ -824,7 +824,7 @@ Module0::DoYourDuty(int wc)
 	*/
 
 	//Se sono nuovi dati effettuo la previsione
-	if (xrGPS != xrNow){		
+	if (true){		
 
 		double pos[3] = { xrGPS, yrGPS, zrGPS };
 		double vel[3] = { dxrGPS, dyrGPS, dzrGPS};
@@ -840,21 +840,21 @@ Module0::DoYourDuty(int wc)
 		dzrNow = dzrGPS;
 
 		//dati predetti
-		/*
+		
 		xr = pos[0];
 		yr = pos[1];
 		zr = pos[2];
 		dxr = vel[0];
 		dyr = vel[1];
-		dzr = vel[2];*/
-
+		dzr = vel[2];
+		/*
 		xr5 = pos[0];
 		yr5 = pos[1];
 		zr5 = pos[2];
 		dxr5 = vel[0];
 		dyr5 = vel[1];
 		dzr5 = vel[2];
-
+		*/
 		//non predetti (usati per il controllo)
 		xr = xrGPS;
 		yr = yrGPS;
