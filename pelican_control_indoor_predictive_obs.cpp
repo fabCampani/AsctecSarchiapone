@@ -145,8 +145,8 @@ double cumuldz_pred = 0;
 //GRIGLIA OSTACOLI
 //---------------------------------------------------------------------PARAMETRI E VARIABILI OSTACOLI
 #define thr_obstacle 10		//soglia per cui l'ostacolo viente considerato tale
-#define cells 40	//---> celle da 0.25
-#define TIME_GRID 1
+#define cells 50				//---> celle da 0.20
+#define TIME_GRID 2.5
 //dimensione lato griglia
 double size_grid = 10;
 //position of cell [0][0]
@@ -176,14 +176,14 @@ void new_occ_grid(double xCenter, double yCenter){
 //aggiunge un ostacolo alla griglia nella casella corrispondente alle coordinate xo yo
 void new_occ(double xo, double yo){
 	if ((xo < start_cell_x) || (xo > start_cell_x + size_grid) || (yo < start_cell_y) || (yo> start_cell_y + size_grid)){
-		cout << xo << "" << yo << " return\n";
+		//cout << xo << "" << yo << " return\n";
 		return;
 	}
 	
-	int index1 = (int)((xo - start_cell_x) / (size_grid / cells));
-	cout << index1 <<" ";
-	int index2 = (int)((yo - start_cell_y) / (size_grid / cells));
-	cout << index2 << endl;
+	int index1 = (int)((xo + (0.5*(size_grid / cells)) - start_cell_x) / (size_grid / cells));
+	//cout << index1 <<" ";
+	int index2 = (int)((yo + (0.5*(size_grid / cells)) - start_cell_y) / (size_grid / cells));
+	//cout << index2 << endl;
 	occ_grid[index1][index2]++;
 	return;
 }
@@ -375,9 +375,9 @@ void PredizioneStato(double* vPos, double* vVel, int delay)
 	double k1 = 0.5;
 	double k2 = 0.5;
 	double k3 = 0.5;
-	double kd1 = 0;
-	double kd2 = 0;
-	double kd3 = 0;
+	double kd1 = 0.1;
+	double kd2 = 0.1;
+	double kd3 = 0.1;
 
 	vPos[0] = x_att + k1*cumulx_pred;
 	vVel[0] = vx_att + kd1*cumuldx_pred;
@@ -412,13 +412,18 @@ void initializeVett(double *vett, int lenght){
 
 
 
+double var = 0.76;
 
 double gauss(double x, double y, double center_x, double center_y)
 {
 	double a = 1;
-	double var = 1;
-
 	return a*exp((-pow((x - center_x),2) - pow((y - center_y),2)) / pow(var,2));
+}
+
+double dgauss(double *res, double x, double y, double center_x, double center_y){
+	res[0] = -2/pow(var,2) * (x - center_x)* gauss(x,y,center_x,center_y);
+	res[1] = -2 / pow(var, 2) * (y - center_y)* gauss(x, y, center_x, center_y);
+	res[2] = 0;
 }
 
 //funzione ricorsiva
@@ -809,6 +814,7 @@ Module0::DoYourDuty(int wc)
 			cout << "*          press S to stop the motors      *" << endl;
 			cout << "*             press A to land              *" << endl;
 			cout << "********************************************" << endl;
+		
 		}
 		else if (rxMsg->ReadType() == 3)
 		{
@@ -839,10 +845,13 @@ Module0::DoYourDuty(int wc)
 			R[2] = -sin(theta);
 			R[5] = sin(phi) * cos(theta);
 			R[8] = cos(phi) * cos(theta);
+
 			double pos[3] = { xr, yr, zr };
 			double vel[3] = { dxr, dyr, dzr };
-			PredizioneStato(pos, vel, RITARDO);
 			
+			if (initialize == 1)
+				PredizioneStato(pos, vel, RITARDO);	
+
 			xrNow = xr;
 			yrNow = yr;
 			zrNow = zr;
@@ -938,7 +947,7 @@ Module0::DoYourDuty(int wc)
 			yo = y1;
 			zo = z1;
 			*/
-			cout << xo << ":" << yo << " ** xr, yr -> " << xrNow << ":" << yrNow <<endl;
+			//cout << xo << ":" << yo << " ** xr, yr -> " << xrNow << ":" << yrNow <<endl;
 
 			xo = xrNow - xo;
 			yo = yrNow - yo;
@@ -1010,19 +1019,30 @@ Module0::DoYourDuty(int wc)
 
 		/***CONTROLLO INIZIA QUI****/
 		//Metto gli ostacoli nella lista
-		enlist_occ(zr);
+		//enlist_occ(zr);
+		//new_occ(-1.8, 0.6);
 
 		e1 = array_function[Nfunc1](xr, yr, zr);
 		e2 = array_function[Nfunc2](xr, yr, zr);
 
 		array_fgrad[Nfunc1](grad1, xr, yr, zr);
 		array_fgrad[Nfunc2](grad2, xr, yr, zr);
+		
+		dxr5 = ke1*e1;
 
-		dxr5 = e1;
-		double funcRico = funzione(xr, yr, zr, Obstacles);
-		double funcIter = obstacleAdder(xr, yr, e1);
+		e1 += gauss(xr, yr, -1.8, 0.6);
+		
+		double ggrad[3];
+		dgauss(ggrad, xr, yr, -1.8, 0.6);
 
-		e1 = funcRico;
+		grad1[0] += ggrad[0];
+		grad1[1] += ggrad[1];
+		grad2[2] += ggrad[2];
+
+		//double funcRico = funzione(xr, yr, zr, Obstacles);
+		//double funcIter = obstacleAdder(xr, yr, e1);
+
+		//e1 = funcIter;
 
 		//Soglia errore
 		if (e1 > thre1){
@@ -1108,7 +1128,6 @@ Module0::DoYourDuty(int wc)
 		dyd = 0;
 		dzd = 0;
 		*/
-
 		if (landing == 1){
 			dxd = 0;
 			dyd = 0;
