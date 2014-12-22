@@ -860,7 +860,7 @@ Module0::DoYourDuty(int wc)
 		double pos[3] = { xrGPS, yrGPS, zrGPS };
 		double vel[3] = { dxrGPS, dyrGPS, dzrGPS};
 
-		PredizioneStato(pos, vel, RITARDO);
+		//PredizioneStato(pos, vel, RITARDO);
 
 		//non predetti
 		xrNow = xrGPS;
@@ -891,7 +891,6 @@ Module0::DoYourDuty(int wc)
 		timeVec[0] = accum_time - last_time;
 		last_time = accum_time;
 	}
-
 	//NED -> drone
 	double dxr1 = R[0] * dxr + R[1] * dyr + R[2] * dzr;
 	double dyr1 = R[3] * dxr + R[4] * dyr + R[5] * dzr;
