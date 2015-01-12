@@ -789,6 +789,7 @@ Module0::DoYourDuty(int wc)
 	double az = 9.81 - T/1.6; //Ma anche no
 
 	//Calcolo della matrice di rotazione ogni volta:
+	/*
 	R[0] = cos(theta) * cos(yawr);
 	R[3] = -cos(phi) * sin(yawr) + sin(phi) * sin(theta) * cos(yawr);
 	R[6] = sin(phi) * sin(yawr) + cos(phi) * sin(theta) * cos(yawr);
@@ -798,7 +799,7 @@ Module0::DoYourDuty(int wc)
 	R[2] = -sin(theta);
 	R[5] = sin(phi) * cos(theta);
 	R[8] = cos(phi) * cos(theta);
-
+	*/
 	if (wc)  return;
 
 	while (MsgToBeRead())  // EHTNOS MESSAGE RECEIVED
@@ -836,6 +837,7 @@ Module0::DoYourDuty(int wc)
 			dzr = *((double*)((char*)(rxMsg->ReadData()) + 6 * sizeof(double)));
 			dyawr = *((double*)((char*)(rxMsg->ReadData()) + 7 * sizeof(double)));
 			//Aggiornamento Rotation Matrix per angolo yaw (telecamere)
+			/*
 			R[0] = cos(theta) * cos(yawr);
 			R[3] = -cos(phi) * sin(yawr) + sin(phi) * sin(theta) * cos(yawr);
 			R[6] = sin(phi) * sin(yawr) + cos(phi) * sin(theta) * cos(yawr);
@@ -845,6 +847,17 @@ Module0::DoYourDuty(int wc)
 			R[2] = -sin(theta);
 			R[5] = sin(phi) * cos(theta);
 			R[8] = cos(phi) * cos(theta);
+			*/
+
+			R[0] = cos(yawr);
+			R[3] = -sin(yawr);
+			R[6] = 0;
+			R[1] = sin(yawr);
+			R[4] = cos(yawr);
+			R[7] = 0;
+			R[2] = 0;
+			R[5] = 0;
+			R[8] = 1;
 
 			double pos[3] = { xr, yr, zr };
 			double vel[3] = { dxr, dyr, dzr };
