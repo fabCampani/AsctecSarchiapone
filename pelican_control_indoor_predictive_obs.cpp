@@ -773,7 +773,8 @@ void
 Module0::DoYourDuty(int wc)
 {
 
-	static double *R = new double[9];
+	static double *R = new double[9];  //Matrice rotazione NED --> ABC
+	static double *RV = new double[9]; //Matrice rotazione ABC --> V
 
 	printTimeCounter++;
 
@@ -839,7 +840,7 @@ Module0::DoYourDuty(int wc)
 			//Aggiornamento Rotation Matrix per angolo yaw (telecamere)
 			//ROTAZIONE NED --> ABC
 			R[0] = cos(theta)*cos(yawr);
-			R[1] = cos(thehta)*sin(yawr);
+			R[1] = cos(theta)*sin(yawr);
 			R[2] = -sin(theta);
 			R[3] = sin(phi)*sin(theta)*cos(yawr) - cos(phi)*sin(yawr);
 			R[4] = cos(phi)*cos(yawr) + sin(phi)*sin(theta)*sin(yawr);
@@ -1223,9 +1224,9 @@ Module0::DoYourDuty(int wc)
 		up = pitchOffset + kpvx*(edx) + kivx*(cumulx) + kdvx*(dedx); // pitch command
 		ur = rollOffset + kpvy*(edy) + kivy*(cumuly) + kdvy*(dedy); // roll command
 		*/
-		double pitchrif = (kpvx*(edx)+kivx*(cumulx)+kdvx*(dedx)) * 0.8936) / 2047;
+		double pitchrif = ((kpvx*(edx)+kivx*(cumulx)+kdvx*(dedx)) * 0.8936) / 2047;
 		up = pitchOffset + (asin(pitchrif)*2047)/0.8936; // pitch command
-		double rollrif = (kpvy*(edy)+kivy*(cumuly)+kdvy*(dedy)* 0.8936) / 2047;
+		double rollrif = ((kpvy*(edy)+kivy*(cumuly)+kdvy*(dedy))* 0.8936) / 2047;
 		ur = rollOffset + asin(rollrif/cos(theta)); // roll command
 
 
