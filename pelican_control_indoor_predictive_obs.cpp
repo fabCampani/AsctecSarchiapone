@@ -837,6 +837,29 @@ Module0::DoYourDuty(int wc)
 			dzr = *((double*)((char*)(rxMsg->ReadData()) + 6 * sizeof(double)));
 			dyawr = *((double*)((char*)(rxMsg->ReadData()) + 7 * sizeof(double)));
 			//Aggiornamento Rotation Matrix per angolo yaw (telecamere)
+			//ROTAZIONE NED --> ABC
+			R[0] = cos(theta)*cos(yawr);
+			R[1] = cos(thehta)*sin(yawr);
+			R[2] = -sin(theta);
+			R[3] = sin(phi)*sin(theta)*cos(yawr) - cos(phi)*sin(yawr);
+			R[4] = cos(phi)*cos(yawr) + sin(phi)*sin(theta)*sin(yawr);
+			R[5] = sin(phi)*cos(theta);
+			R[6] = cos(phi)*sin(theta)*cos(yawr) + sin(phi)*sin(yawr);
+			R[7] = sin(theta)*cos(phi)*sin(yawr) - sin(phi)*cos(yawr);
+			R[8] = cos(theta)*cos(phi);
+
+			//ROTAZIONE ABC --> V
+			RV[0] = cos(theta);
+			RV[1] = 0;
+			RV[2] = sin(theta);
+			RV[3] = sin(phi)*cos(theta);
+			RV[4] = cos(phi);
+			RV[5] = -sin(phi)*cos(theta);
+			RV[6] = -sin(theta)*cos(phi);
+			RV[7] = sin(phi);
+			RV[8] = cos(phi)*cos(theta);
+
+
 			/*
 			R[0] = cos(theta) * cos(yawr);
 			R[3] = -cos(phi) * sin(yawr) + sin(phi) * sin(theta) * cos(yawr);
@@ -848,7 +871,7 @@ Module0::DoYourDuty(int wc)
 			R[5] = sin(phi) * cos(theta);
 			R[8] = cos(phi) * cos(theta);
 			*/
-
+			/*
 			R[0] = cos(yawr);
 			R[3] = -sin(yawr);
 			R[6] = 0;
@@ -857,7 +880,7 @@ Module0::DoYourDuty(int wc)
 			R[7] = 0;
 			R[2] = 0;
 			R[5] = 0;
-			R[8] = 1;
+			R[8] = 1;*/
 
 			double pos[3] = { xr, yr, zr };
 			double vel[3] = { dxr, dyr, dzr };
@@ -923,14 +946,20 @@ Module0::DoYourDuty(int wc)
 			dyr = dyrT;
 			dzr = dzrT;
 
-			//NED -> drone
+			//NED -> droneABC
 			double dxr1 = R[0] * dxr + R[1] * dyr + R[2] * dzr;
 			double dyr1 = R[3] * dxr + R[4] * dyr + R[5] * dzr;
 			double dzr1 = R[6] * dxr + R[7] * dyr + R[8] * dzr;
+
+
+			dxr = RV[0] * dxr1 + RV[1] * dyr1 + RV[2] * dzr1;
+			dyr = RV[3] * dxr1 + RV[4] * dyr1 + RV[5] * dzr1;
+			dzr = RV[6] * dxr1 + RV[7] * dyr1 + RV[8] * dzr1;
+			/*
 			dxr = dxr1;
 			dyr = dyr1;
 			dzr = dzr1;
-
+			*/
 			telecamere = true;
 			for (int i = RITARDO - 1; i >0; i--)
 			{
@@ -1129,9 +1158,13 @@ Module0::DoYourDuty(int wc)
 		dzd = SumNED[2];
 
 		//NED -> drone
-		dxd = R[0] * SumNED[0] + R[1] * SumNED[1] + R[2] * SumNED[2];
-		dyd = R[3] * SumNED[0] + R[4] * SumNED[1] + R[5] * SumNED[2];
-		dzd = R[6] * SumNED[0] + R[7] * SumNED[1] + R[8] * SumNED[2];
+		double dxd1 = R[0] * SumNED[0] + R[1] * SumNED[1] + R[2] * SumNED[2];
+		double dyd1 = R[3] * SumNED[0] + R[4] * SumNED[1] + R[5] * SumNED[2];
+		double dzd1 = R[6] * SumNED[0] + R[7] * SumNED[1] + R[8] * SumNED[2];
+
+		dxd = RV[0] * dxd1 + RV[1] * dyd1 + RV[2] * dzd1;
+		dyd = RV[3] * dxd1 + RV[4] * dyd1 + RV[5] * dzd1;
+		dzd = RV[6] * dxd1 + RV[7] * dyd1 + RV[8] * dzd1;
 		
 
 		/*ATTENZIONE!*/
@@ -1186,10 +1219,15 @@ Module0::DoYourDuty(int wc)
 		kpvxMod = kpvx * abs(edx);
 		kpvyMod = kpvy * abs(edy);
 		*/
-
+		/*
 		up = pitchOffset + kpvx*(edx) + kivx*(cumulx) + kdvx*(dedx); // pitch command
-
 		ur = rollOffset + kpvy*(edy) + kivy*(cumuly) + kdvy*(dedy); // roll command
+		*/
+		double pitchrif = (kpvx*(edx)+kivx*(cumulx)+kdvx*(dedx)) * 0.8936) / 2047;
+		up = pitchOffset + (asin(pitchrif)*2047)/0.8936; // pitch command
+		double rollrif = (kpvy*(edy)+kivy*(cumuly)+kdvy*(dedy)* 0.8936) / 2047;
+		ur = rollOffset + asin(rollrif/cos(theta)); // roll command
+
 
 		//Procedura di ATTERRAGGIO (non ancora testata)
 
@@ -1209,11 +1247,10 @@ Module0::DoYourDuty(int wc)
 					//printf("Procedura di atterraggio: Thrust: %f\n", ut);
 					ut = ut - 0.2;
 			}
-
 		}
 		else
-			ut = gravity + kpvz*(edz) + kivz*(cumulz) + kdvz*(dedz); // thrust command calculation
-
+			//ut = gravity + kpvz*(edz) + kivz*(cumulz) + kdvz*(dedz); // thrust command calculation
+			ut = gravity + (kpvz*(edz)+kivz*(cumulz)+kdvz*(dedz)) / (cos(theta)*cos(phi)); // thrust command calculation
 		if (ut < 1700){
 			ut = 1700;
 		}
