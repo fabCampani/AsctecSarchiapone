@@ -108,6 +108,8 @@ double Perpx, Perpy, Perpz;
 
 double kpvxMod, kpvyMod;
 
+double up1, ur1, ut1;
+
 
 //PREDIZIONE
 //-----------------------------------------------------------------PARAMETRI E VARIABILI PREDITTORE DI SMITH
@@ -801,6 +803,18 @@ Module0::DoYourDuty(int wc)
 	R[5] = sin(phi) * cos(theta);
 	R[8] = cos(phi) * cos(theta);
 	*/
+
+	//ROTAZIONE ABC --> V
+	RV[0] = cos(theta);
+	RV[1] = 0;
+	RV[2] = sin(theta);
+	RV[3] = sin(phi)*cos(theta);
+	RV[4] = cos(phi);
+	RV[5] = -sin(phi)*cos(theta);
+	RV[6] = -sin(theta)*cos(phi);
+	RV[7] = sin(phi);
+	RV[8] = cos(phi)*cos(theta);
+
 	if (wc)  return;
 
 	while (MsgToBeRead())  // EHTNOS MESSAGE RECEIVED
@@ -848,18 +862,6 @@ Module0::DoYourDuty(int wc)
 			R[6] = cos(phi)*sin(theta)*cos(yawr) + sin(phi)*sin(yawr);
 			R[7] = sin(theta)*cos(phi)*sin(yawr) - sin(phi)*cos(yawr);
 			R[8] = cos(theta)*cos(phi);
-
-			//ROTAZIONE ABC --> V
-			RV[0] = cos(theta);
-			RV[1] = 0;
-			RV[2] = sin(theta);
-			RV[3] = sin(phi)*cos(theta);
-			RV[4] = cos(phi);
-			RV[5] = -sin(phi)*cos(theta);
-			RV[6] = -sin(theta)*cos(phi);
-			RV[7] = sin(phi);
-			RV[8] = cos(phi)*cos(theta);
-
 
 			/*
 			R[0] = cos(theta) * cos(yawr);
@@ -952,10 +954,11 @@ Module0::DoYourDuty(int wc)
 			double dyr1 = R[3] * dxr + R[4] * dyr + R[5] * dzr;
 			double dzr1 = R[6] * dxr + R[7] * dyr + R[8] * dzr;
 
-
+			//DroneABC -> DroneV
 			dxr = RV[0] * dxr1 + RV[1] * dyr1 + RV[2] * dzr1;
 			dyr = RV[3] * dxr1 + RV[4] * dyr1 + RV[5] * dzr1;
 			dzr = RV[6] * dxr1 + RV[7] * dyr1 + RV[8] * dzr1;
+
 			/*
 			dxr = dxr1;
 			dyr = dyr1;
@@ -1072,16 +1075,15 @@ Module0::DoYourDuty(int wc)
 		array_fgrad[Nfunc2](grad2, xr, yr, zr);
 		
 		dxr5 = ke1*e1;
-
+		/*
 		e1 += gauss(xr, yr, -1.8, 0.6);
-		
 		double ggrad[3];
 		dgauss(ggrad, xr, yr, -1.8, 0.6);
 
 		grad1[0] += ggrad[0];
 		grad1[1] += ggrad[1];
 		grad2[2] += ggrad[2];
-
+		*/
 		//double funcRico = funzione(xr, yr, zr, Obstacles);
 		//double funcIter = obstacleAdder(xr, yr, e1);
 
@@ -1162,7 +1164,7 @@ Module0::DoYourDuty(int wc)
 		double dxd1 = R[0] * SumNED[0] + R[1] * SumNED[1] + R[2] * SumNED[2];
 		double dyd1 = R[3] * SumNED[0] + R[4] * SumNED[1] + R[5] * SumNED[2];
 		double dzd1 = R[6] * SumNED[0] + R[7] * SumNED[1] + R[8] * SumNED[2];
-
+		//droneABC -> DroneV
 		dxd = RV[0] * dxd1 + RV[1] * dyd1 + RV[2] * dzd1;
 		dyd = RV[3] * dxd1 + RV[4] * dyd1 + RV[5] * dzd1;
 		dzd = RV[6] * dxd1 + RV[7] * dyd1 + RV[8] * dzd1;
@@ -1202,15 +1204,6 @@ Module0::DoYourDuty(int wc)
 		cumuly = cumuly + edy*mtime;
 		cumulz = cumulz + edz*mtime;
 
-		//Derivativo: (NON VA FATTO così)
-		/*
-		dedx = (edx - edxback) / mtime;
-		dedy = (edy - edyback) / mtime;
-		dedz = (edz - edzback) / mtime;
-		edxback = edx;
-		edyback = edy;
-		edzback = edz;
-		*/
 
 		dedx = -ax;
 		dedy = -ay;
@@ -1220,14 +1213,15 @@ Module0::DoYourDuty(int wc)
 		kpvxMod = kpvx * abs(edx);
 		kpvyMod = kpvy * abs(edy);
 		*/
-		/*
-		up = pitchOffset + kpvx*(edx) + kivx*(cumulx) + kdvx*(dedx); // pitch command
-		ur = rollOffset + kpvy*(edy) + kivy*(cumuly) + kdvy*(dedy); // roll command
-		*/
+		
+		up1 = pitchOffset + kpvx*(edx) + kivx*(cumulx) + kdvx*(dedx); // pitch command
+		ur1 = rollOffset + kpvy*(edy) + kivy*(cumuly) + kdvy*(dedy); // roll command
+		
+
 		double pitchrif = ((kpvx*(edx)+kivx*(cumulx)+kdvx*(dedx)) * 0.8936) / 2047;
 		up = pitchOffset + (asin(pitchrif)*2047)/0.8936; // pitch command
 		double rollrif = ((kpvy*(edy)+kivy*(cumuly)+kdvy*(dedy))* 0.8936) / 2047;
-		ur = rollOffset + asin(rollrif/cos(theta)); // roll command
+		ur = rollOffset + (asin(rollrif / cos(theta)) * 2047)/0.8936; // roll command
 
 
 		//Procedura di ATTERRAGGIO (non ancora testata)
@@ -1250,7 +1244,8 @@ Module0::DoYourDuty(int wc)
 			}
 		}
 		else
-			//ut = gravity + kpvz*(edz) + kivz*(cumulz) + kdvz*(dedz); // thrust command calculation
+			ut1 = gravity + kpvz*(edz) + kivz*(cumulz) + kdvz*(dedz); // thrust command calculation
+
 			ut = gravity + (kpvz*(edz)+kivz*(cumulz)+kdvz*(dedz)) / (cos(theta)*cos(phi)); // thrust command calculation
 		if (ut < 1700){
 			ut = 1700;
@@ -1310,11 +1305,37 @@ Module0::DoYourDuty(int wc)
 		//CONVERSIONE
 		if (telecamere)
 		{
+			/*
 			T = CTRL_thrust* 9.81 / gravity;
 			double peso = 1.5;
 			contrx[0] = (T * sin(((pitchOffset - CTRL_pitch) * 0.8936) / 2047))/ peso;
 			contry[0] = (T * sin((CTRL_roll * 0.8936) / 2047))/ peso;
 			contrz[0] = (9.81 - T )/ peso;
+			telecamere = false;
+			*/
+			a_theta = ((pitchOffset - CTRL_pitch) * 0.8936)/2047;
+			a_phi = (CTRL_roll * 0.8936) / 2047;
+
+			T = CTRL_thrust* 9.81 / gravity;
+			double peso = 1.5;
+
+			/*contrx[0] = (T * sin(a_pitch)) / peso;
+			contry[0] = (T * sin(a_roll) / cos(a_pitch)) / peso;
+			contrz[0] = (9.81 - T) / peso;*/
+
+			double R_6 = sin(a_phi) * sin(yawr) + cos(a_phi) * sin(a_theta) * cos(yawr);
+
+			double R_7 = -sin(a_phi) * cos(yawr) + cos(a_phi) * sin(a_theta) * sin(yawr);
+
+			double R_8 = cos(a_phi) * cos(a_theta);
+			
+			double accABC = T/peso;
+
+			//ABC -> NED
+			contrx[0] = R_6 * accABC;
+			contry[0] = R_7 * accABC;
+			contrz[0] = 9.81 - (R_8 * accABC);
+
 			telecamere = false;
 		}
 
@@ -1398,6 +1419,7 @@ Module0::DoYourDuty(int wc)
 		//printf ("GPS STATUS:  gps: heading: %d, yaw: %f, accuracy: %d, height accuracy: %d, sat: %d, status: %d  \n", GPS_heading, psi, position_accuracy, height_accuracy, GPS_num, GPS_status);       
 		printf("\n\nROBOT POSITION: x, y, z, yaw: %f %f %f %f\n", xr, yr, zr, yawr*180/M_PI);
 		printf("COMMANDS: command pitch, roll, thrust, yaw: %d %d %d %d \n", CTRL_pitch, CTRL_roll, CTRL_thrust, CTRL_yaw);
+		printf("COMMANDS: command pitch, roll, thrust, yaw: %d %d %d %d \n", (int16_t)up1, (int16_t)ur1, (int16_t)ut1, CTRL_yaw);
 		//printf("COMMANDS: edx, edy, edz: %f %f %f \n", edx, edy, edz);
 		//printf("VELOCITY   : dx, dy, dz: %f %f %f \n", dxr, dyr, dzr);
 		//printf("VELOCITYNED: dx, dy, dz: %f %f %f \n", dxrDeb, dyrDeb, dzrDeb);
