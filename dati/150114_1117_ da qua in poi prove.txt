@@ -1,0 +1,2 @@
+1155 : Cerchio con errore in posizione strano
+1216 : Cerchio raggio 0.6 abbastanza bello, da tenere presente!

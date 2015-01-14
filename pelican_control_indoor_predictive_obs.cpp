@@ -1251,9 +1251,10 @@ Module0::DoYourDuty(int wc)
 		if (ut < 1700){
 			ut = 1700;
 		}
-
-		//Controllo Yaw (MAI TESTATO)
-		yawd = atan2(y_target - yr, x_target - xr);
+		double projection_y = yr + 0.20 * cos(yawr) - 0.09 * sin(yawr);
+		double projection_x = xr + 0.09 * cos(yawr) + 0.20 * sin(yawr);
+ 		//Controllo Yaw (MAI TESTATO)
+		yawd = atan2(y_target - projection_y, x_target - projection_x);
 		eyaw = sin(yawd - yawr);
 		uy = kpyaw*(eyaw) + kdyaw*(-dyawr);
 
@@ -1314,28 +1315,32 @@ Module0::DoYourDuty(int wc)
 			contrz[0] = (9.81 - T )/ peso;
 			telecamere = false;
 			*/
-			double a_theta = ((pitchOffset - CTRL_pitch) * 0.8936)/2047;
+			double a_theta = -((pitchOffset - CTRL_pitch) * 0.8936) / 2047;
 			double a_phi = (CTRL_roll * 0.8936) / 2047;
 
 			T = CTRL_thrust* 9.81 / gravity;
 			double peso = 1.5;
 
-			/*contrx[0] = (T * sin(a_pitch)) / peso;
+			/*
+			contrx[0] = (T * sin(a_pitch)) / peso;
 			contry[0] = (T * sin(a_roll) / cos(a_pitch)) / peso;
-			contrz[0] = (9.81 - T) / peso;*/
+			contrz[0] = (9.81 - T) / peso;
+			*/
 
+			
 			double R_6 = sin(a_phi) * sin(yawr) + cos(a_phi) * sin(a_theta) * cos(yawr);
 
 			double R_7 = -sin(a_phi) * cos(yawr) + cos(a_phi) * sin(a_theta) * sin(yawr);
 
 			double R_8 = cos(a_phi) * cos(a_theta);
 			
-			double accABC = T/peso;
-
+			double accABC = -T/peso;
+			
 			//ABC -> NED
 			contrx[0] = R_6 * accABC;
 			contry[0] = R_7 * accABC;
-			contrz[0] = 9.81 - (R_8 * accABC);
+			//contrz[0] = (9.81 - T) / peso;
+			contrz[0] = 9.81/peso + (R_8 * accABC);
 
 			telecamere = false;
 		}
