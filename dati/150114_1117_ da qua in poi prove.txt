@@ -1,2 +1,7 @@
 1155 : Cerchio con errore in posizione strano
 1216 : Cerchio raggio 0.6 abbastanza bello, da tenere presente!
+1459 : Cerchio con modifica telecamere
+1517 : Ellisse 1.1 0.6
+1536 : Cerchio 0.6 di sbieco k1 + bassa
+1544 : Altro piano inclinato
+1553 : Cerchio verticale
