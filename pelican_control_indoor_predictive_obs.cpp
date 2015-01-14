@@ -1075,6 +1075,7 @@ Module0::DoYourDuty(int wc)
 		array_fgrad[Nfunc2](grad2, xr, yr, zr);
 		
 		dxr5 = ke1*e1;
+
 		/*
 		e1 += gauss(xr, yr, -1.8, 0.6);
 		double ggrad[3];
@@ -1313,8 +1314,8 @@ Module0::DoYourDuty(int wc)
 			contrz[0] = (9.81 - T )/ peso;
 			telecamere = false;
 			*/
-			a_theta = ((pitchOffset - CTRL_pitch) * 0.8936)/2047;
-			a_phi = (CTRL_roll * 0.8936) / 2047;
+			double a_theta = ((pitchOffset - CTRL_pitch) * 0.8936)/2047;
+			double a_phi = (CTRL_roll * 0.8936) / 2047;
 
 			T = CTRL_thrust* 9.81 / gravity;
 			double peso = 1.5;
@@ -1412,14 +1413,14 @@ Module0::DoYourDuty(int wc)
 	// terminal visualization (debug)
 
 	if ((printTimeCounter == printstep)){
-		system("clear");
+		//system("clear");
 		//printf ("GPS DATA: long %d lat %d height %d", longitude, latitude, height);
 		//printf ("gps_cartesian: long %f lat %f height %f \n", long_cart, lat_cart, height_cart);
 		//printf ("  fus long %d lat %d height %d \n", fus_longitude, fus_latitude, fus_height);
 		//printf ("GPS STATUS:  gps: heading: %d, yaw: %f, accuracy: %d, height accuracy: %d, sat: %d, status: %d  \n", GPS_heading, psi, position_accuracy, height_accuracy, GPS_num, GPS_status);       
-		printf("\n\nROBOT POSITION: x, y, z, yaw: %f %f %f %f\n", xr, yr, zr, yawr*180/M_PI);
-		printf("COMMANDS: command pitch, roll, thrust, yaw: %d %d %d %d \n", CTRL_pitch, CTRL_roll, CTRL_thrust, CTRL_yaw);
-		printf("COMMANDS: command pitch, roll, thrust, yaw: %d %d %d %d \n", (int16_t)up1, (int16_t)ur1, (int16_t)ut1, CTRL_yaw);
+		//printf("\n\nROBOT POSITION: x, y, z, yaw: %f %f %f %f\n", xr, yr, zr, yawr*180/M_PI);
+		//printf("COMMANDS: command pitch, roll, thrust, yaw: %d %d %d %d \n", CTRL_pitch, CTRL_roll, CTRL_thrust, CTRL_yaw);
+		//printf("COMMANDS: command pitch, roll, thrust, yaw: %d %d %d %d \n", (int16_t)up1, (int16_t)ur1, (int16_t)ut1, CTRL_yaw);
 		//printf("COMMANDS: edx, edy, edz: %f %f %f \n", edx, edy, edz);
 		//printf("VELOCITY   : dx, dy, dz: %f %f %f \n", dxr, dyr, dzr);
 		//printf("VELOCITYNED: dx, dy, dz: %f %f %f \n", dxrDeb, dyrDeb, dzrDeb);
