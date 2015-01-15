@@ -113,7 +113,7 @@ double up1, ur1, ut1;
 
 //PREDIZIONE
 //-----------------------------------------------------------------PARAMETRI E VARIABILI PREDITTORE DI SMITH
-#define RITARDO 10
+#define RITARDO 12
 double last_time = 0;
 double timeVec[RITARDO];
 double contrx[RITARDO]; //Controlli passati
@@ -413,22 +413,25 @@ void initializeVett(double *vett, int lenght){
 }
 
 
+double ampli = 1.7;
+double var = 0.75;
 
-double var = 0.42;
-
-double gauss(double x, double y, double center_x, double center_y)
+double gauss(double x, double y, double center_x, double center_y, double a)
 {
-	double a = 3.5;
+
 	return a*exp((-pow((x - center_x),2) - pow((y - center_y),2)) / pow(var,2));
 }
 
-double dgauss(double *res, double x, double y, double center_x, double center_y){
-	res[0] = -2/pow(var,2) * (x - center_x)* gauss(x,y,center_x,center_y);
-	res[1] = -2 / pow(var, 2) * (y - center_y)* gauss(x, y, center_x, center_y);
+double dgauss(double *res, double x, double y, double center_x, double center_y, double a){
+	
+	res[0] = -2/pow(var,2) * (x - center_x)* gauss(x,y,center_x,center_y, a);
+	res[1] = -2 / pow(var, 2) * (y - center_y)* gauss(x, y, center_x, center_y, a);
 	res[2] = 0;
+
 }
 
 //funzione ricorsiva
+/*
 double funzione(double x, double y, double z, list<Obstacle*> punti_prec){
 
 	if (punti_prec.empty()){
@@ -487,7 +490,7 @@ double obstacleAdder(double x_coordinate, double y_coordinate, double livello)
 	return livello_influenzato;
 
 }
-
+*/
 
 // debug function -- the parameters can be printed to check if they were correctly loaded.
 void
@@ -606,6 +609,7 @@ Module0::loadParams() {
 		//5th line: gravitycompensation pitchOffset
 		//6th line: ke1 ke2 (always negative)
 		//7th line: thr_vel
+		//8th line: var ampli
 		fs >> kpvx;
 		fs >> kpvy;
 		fs >> kpvz;
@@ -629,6 +633,8 @@ Module0::loadParams() {
 		fs >> ke2;
 
 		fs >> thr_vel;
+		fs >> var;
+		fs >> ampli;
 	}
 
 	//Carcamento Funzioni da file
@@ -721,7 +727,9 @@ Module0::initializeDataSaving() {
 		fs2 << "pitchoff\t";
 		fs2 << "ke1\tke2\t";
 		fs2 << "gravity\t";
-		fs2 << "thr_vel\n";		
+		fs2 << "thr_vel\t";	
+		fs2 << "var\t";
+		fs2 << "ampli\n";
 
 		cout << "File with controls initialized" << endl;
 	}
@@ -1075,16 +1083,20 @@ Module0::DoYourDuty(int wc)
 		array_fgrad[Nfunc2](grad2, xr, yr, zr);
 		
 		dxr5 = ke1*e1;
-
 		/*
-		e1 += gauss(xr, yr, -1.8, 0.6);
+		double oBS[] = { -1.8, -0.77 };
+
+		double ampiezza = array_function[Nfunc1](oBS[0], oBS[1], zr) + ampli;
+
+		e1 += gauss(xr, yr, oBS[0], oBS[1], ampiezza);
 		double ggrad[3];
-		dgauss(ggrad, xr, yr, -1.8, 0.6);
+		dgauss(ggrad, xr, yr, oBS[0], oBS[1], ampiezza);
 
 		grad1[0] += ggrad[0];
 		grad1[1] += ggrad[1];
 		grad2[2] += ggrad[2];
 		*/
+
 		//double funcRico = funzione(xr, yr, zr, Obstacles);
 		//double funcIter = obstacleAdder(xr, yr, e1);
 
@@ -1408,6 +1420,8 @@ Module0::DoYourDuty(int wc)
 			fs2 << ke1 << "\t" << ke2 << "\t";
 			fs2 << gravity << "\t";
 			fs2 << thr_vel;
+			fs2 << var;
+			fs2 << ampli;
 			fs2 << "\n";
 
 		}
