@@ -113,7 +113,7 @@ double up1, ur1, ut1;
 
 //PREDIZIONE
 //-----------------------------------------------------------------PARAMETRI E VARIABILI PREDITTORE DI SMITH
-#define RITARDO 12
+#define RITARDO 10
 double last_time = 0;
 double timeVec[RITARDO];
 double contrx[RITARDO]; //Controlli passati
@@ -374,12 +374,12 @@ void PredizioneStato(double* vPos, double* vVel, int delay)
 		cumuldz_pred += dz_error_pred * t_medio;
 	}
 
-	double k1 = 0.5;
-	double k2 = 0.5;
-	double k3 = 0.5;
-	double kd1 = 0.1;
-	double kd2 = 0.1;
-	double kd3 = 0.1;
+	double k1 = 0;
+	double k2 = 0;
+	double k3 = 0;
+	double kd1 = 0;
+	double kd2 = 0;
+	double kd3 = 0;
 
 	vPos[0] = x_att + k1*cumulx_pred;
 	vVel[0] = vx_att + kd1*cumuldx_pred;
@@ -861,15 +861,15 @@ Module0::DoYourDuty(int wc)
 			dyawr = *((double*)((char*)(rxMsg->ReadData()) + 7 * sizeof(double)));
 			//Aggiornamento Rotation Matrix per angolo yaw (telecamere)
 			//ROTAZIONE NED --> ABC
-			R[0] = cos(theta)*cos(yawr);
-			R[1] = cos(theta)*sin(yawr);
-			R[2] = -sin(theta);
-			R[3] = sin(phi)*sin(theta)*cos(yawr) - cos(phi)*sin(yawr);
-			R[4] = cos(phi)*cos(yawr) + sin(phi)*sin(theta)*sin(yawr);
-			R[5] = sin(phi)*cos(theta);
-			R[6] = cos(phi)*sin(theta)*cos(yawr) + sin(phi)*sin(yawr);
-			R[7] = sin(theta)*cos(phi)*sin(yawr) - sin(phi)*cos(yawr);
-			R[8] = cos(theta)*cos(phi);
+			R[0] = cos(yawr);
+			R[1] = sin(yawr);
+			R[2] = 0;
+			R[3] = -sin(yawr);
+			R[4] = cos(yawr);
+			R[5] = 0;
+			R[6] = 0;
+			R[7] = 0;
+			R[8] = 1;
 
 			/*
 			R[0] = cos(theta) * cos(yawr);
@@ -963,15 +963,16 @@ Module0::DoYourDuty(int wc)
 			double dzr1 = R[6] * dxr + R[7] * dyr + R[8] * dzr;
 
 			//DroneABC -> DroneV
+			/*
 			dxr = RV[0] * dxr1 + RV[1] * dyr1 + RV[2] * dzr1;
 			dyr = RV[3] * dxr1 + RV[4] * dyr1 + RV[5] * dzr1;
 			dzr = RV[6] * dxr1 + RV[7] * dyr1 + RV[8] * dzr1;
-
-			/*
+			*/
+			
 			dxr = dxr1;
 			dyr = dyr1;
 			dzr = dzr1;
-			*/
+			
 			telecamere = true;
 			for (int i = RITARDO - 1; i >0; i--)
 			{
@@ -1083,8 +1084,8 @@ Module0::DoYourDuty(int wc)
 		array_fgrad[Nfunc2](grad2, xr, yr, zr);
 		
 		dxr5 = ke1*e1;
-		/*
-		double oBS[] = { -1.8, -0.77 };
+		
+		double oBS[] = { -1.8, 0.57 };
 
 		double ampiezza = array_function[Nfunc1](oBS[0], oBS[1], zr) + ampli;
 
@@ -1095,7 +1096,7 @@ Module0::DoYourDuty(int wc)
 		grad1[0] += ggrad[0];
 		grad1[1] += ggrad[1];
 		grad2[2] += ggrad[2];
-		*/
+		
 
 		//double funcRico = funzione(xr, yr, zr, Obstacles);
 		//double funcIter = obstacleAdder(xr, yr, e1);
@@ -1230,12 +1231,14 @@ Module0::DoYourDuty(int wc)
 		up1 = pitchOffset + kpvx*(edx) + kivx*(cumulx) + kdvx*(dedx); // pitch command
 		ur1 = rollOffset + kpvy*(edy) + kivy*(cumuly) + kdvy*(dedy); // roll command
 		
-
+		/*
 		double pitchrif = ((kpvx*(edx)+kivx*(cumulx)+kdvx*(dedx)) * 0.8936) / 2047;
 		up = pitchOffset + (asin(pitchrif)*2047)/0.8936; // pitch command
 		double rollrif = ((kpvy*(edy)+kivy*(cumuly)+kdvy*(dedy))* 0.8936) / 2047;
 		ur = rollOffset + (asin(rollrif / cos(theta)) * 2047)/0.8936; // roll command
-
+		*/
+		up = up1;
+		ur = ur1;
 
 		//Procedura di ATTERRAGGIO (non ancora testata)
 
@@ -1256,10 +1259,11 @@ Module0::DoYourDuty(int wc)
 					ut = ut - 0.2;
 			}
 		}
-		else
-			ut1 = gravity + kpvz*(edz) + kivz*(cumulz) + kdvz*(dedz); // thrust command calculation
-
-			ut = gravity + (kpvz*(edz)+kivz*(cumulz)+kdvz*(dedz)) / (cos(theta)*cos(phi)); // thrust command calculation
+		else{
+			ut1 = gravity + kpvz*(edz)+kivz*(cumulz)+kdvz*(dedz); // thrust command calculation
+			ut = ut1;
+			//ut = gravity + (kpvz*(edz)+kivz*(cumulz)+kdvz*(dedz)) / (cos(theta)*cos(phi)); // thrust command calculation
+		}
 		if (ut < 1700){
 			ut = 1700;
 		}
@@ -1347,7 +1351,7 @@ Module0::DoYourDuty(int wc)
 			double R_8 = cos(a_phi) * cos(a_theta);
 			
 			double accABC = -T/peso;
-			
+
 			//ABC -> NED
 			contrx[0] = R_6 * accABC;
 			contry[0] = R_7 * accABC;
@@ -1419,8 +1423,8 @@ Module0::DoYourDuty(int wc)
 			fs2 << pitchOffset << "\t";
 			fs2 << ke1 << "\t" << ke2 << "\t";
 			fs2 << gravity << "\t";
-			fs2 << thr_vel;
-			fs2 << var;
+			fs2 << thr_vel << "\t";
+			fs2 << var << "\t";
 			fs2 << ampli;
 			fs2 << "\n";
 
@@ -1437,7 +1441,7 @@ Module0::DoYourDuty(int wc)
 		//printf ("gps_cartesian: long %f lat %f height %f \n", long_cart, lat_cart, height_cart);
 		//printf ("  fus long %d lat %d height %d \n", fus_longitude, fus_latitude, fus_height);
 		//printf ("GPS STATUS:  gps: heading: %d, yaw: %f, accuracy: %d, height accuracy: %d, sat: %d, status: %d  \n", GPS_heading, psi, position_accuracy, height_accuracy, GPS_num, GPS_status);       
-		//printf("\n\nROBOT POSITION: x, y, z, yaw: %f %f %f %f\n", xr, yr, zr, yawr*180/M_PI);
+		printf("\n\nROBOT POSITION: x, y, z, yaw: %f %f %f %f\n", xr, yr, zr, yawr*180/M_PI);
 		//printf("COMMANDS: command pitch, roll, thrust, yaw: %d %d %d %d \n", CTRL_pitch, CTRL_roll, CTRL_thrust, CTRL_yaw);
 		//printf("COMMANDS: command pitch, roll, thrust, yaw: %d %d %d %d \n", (int16_t)up1, (int16_t)ur1, (int16_t)ut1, CTRL_yaw);
 		//printf("COMMANDS: edx, edy, edz: %f %f %f \n", edx, edy, edz);
