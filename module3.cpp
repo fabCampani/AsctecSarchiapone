@@ -340,9 +340,9 @@ if (wc)  return;
 		aPsi_back=aPsi;
 
 		for (int m =(TheMarkers.size()-1);m>=0;m--) {
-			if (TheMarkers[m].id == 1021){
+			/*if (TheMarkers[m].id == 1021){
 				continue;
-			}
+			}*/
 			cv::Rodrigues(TheMarkers[m].Rvec, Rcv); // R is 3x3
 			Rcv = Rcv.t();  // rotation of inverse
 			TheMarkers[m].Tvec = -Rcv * TheMarkers[m].Tvec; // translation of inverse

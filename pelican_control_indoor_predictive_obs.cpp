@@ -113,7 +113,7 @@ double up1, ur1, ut1;
 
 //PREDIZIONE
 //-----------------------------------------------------------------PARAMETRI E VARIABILI PREDITTORE DI SMITH
-#define RITARDO 10
+#define RITARDO 12
 double last_time = 0;
 double timeVec[RITARDO];
 double contrx[RITARDO]; //Controlli passati
@@ -374,12 +374,12 @@ void PredizioneStato(double* vPos, double* vVel, int delay)
 		cumuldz_pred += dz_error_pred * t_medio;
 	}
 
-	double k1 = 0;
-	double k2 = 0;
-	double k3 = 0;
+	double k1 = 0.2;
+	double k2 = 0.2;
+	double k3 = 0.2;
 	double kd1 = 0;
-	double kd2 = 0;
-	double kd3 = 0;
+	double kd2 = 0.0;
+	double kd3 = 0.0;
 
 	vPos[0] = x_att + k1*cumulx_pred;
 	vVel[0] = vx_att + kd1*cumuldx_pred;
@@ -1085,7 +1085,7 @@ Module0::DoYourDuty(int wc)
 		
 		dxr5 = ke1*e1;
 		
-		double oBS[] = { -1.8, 0.57 };
+		double oBS[] = {-1.8, -0.77 };
 
 		double ampiezza = array_function[Nfunc1](oBS[0], oBS[1], zr) + ampli;
 
@@ -1364,7 +1364,7 @@ Module0::DoYourDuty(int wc)
 	}
 
 	// data saving
-	if (initialize == 1){
+	if ((false)||(initialize == 1)){
 		ofstream fs2("dataasctec.txt", std::ofstream::out | std::ofstream::app);
 
 		if (fs2.is_open()){
